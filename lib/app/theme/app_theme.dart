@@ -183,6 +183,60 @@ abstract final class AppTheme {
           );
         }),
       ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        indicatorColor: AppColors.darkSurfaceOverlay,
+        elevation: 0,
+        selectedIconTheme: const IconThemeData(color: AppColors.darkAccent),
+        unselectedIconTheme: const IconThemeData(
+          color: AppColors.darkTextTertiary,
+        ),
+        selectedLabelTextStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.darkAccent,
+        ),
+        unselectedLabelTextStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppColors.darkTextTertiary,
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.darkAccent.withValues(alpha: 0.18);
+            }
+            return AppColors.darkSurfaceElevated;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.darkAccent;
+            }
+            return AppColors.darkTextSecondary;
+          }),
+          side: WidgetStateProperty.all(
+            const BorderSide(color: AppColors.darkBorder),
+          ),
+          shape: WidgetStateProperty.all(
+            const RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+          ),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        surfaceTintColor: Colors.transparent,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.darkSurfaceElevated,
+        side: const BorderSide(color: AppColors.darkBorder),
+        shape: const RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: AppColors.darkTextPrimary,
+        ),
+      ),
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.darkAccent,
         inactiveTrackColor: AppColors.darkSurfaceOverlay,
@@ -270,6 +324,60 @@ abstract final class AppTheme {
             color: AppColors.lightTextTertiary,
           );
         }),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: AppColors.lightSurfaceElevated,
+        indicatorColor: AppColors.lightSurfaceOverlay,
+        elevation: 0,
+        selectedIconTheme: const IconThemeData(color: AppColors.lightAccent),
+        unselectedIconTheme: const IconThemeData(
+          color: AppColors.lightTextTertiary,
+        ),
+        selectedLabelTextStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: AppColors.lightAccent,
+        ),
+        unselectedLabelTextStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppColors.lightTextTertiary,
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.lightAccent.withValues(alpha: 0.15);
+            }
+            return AppColors.lightSurfaceElevated;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.lightAccent;
+            }
+            return AppColors.lightTextSecondary;
+          }),
+          side: WidgetStateProperty.all(
+            const BorderSide(color: AppColors.lightBorder),
+          ),
+          shape: WidgetStateProperty.all(
+            const RoundedRectangleBorder(borderRadius: AppSpacing.roundedMd),
+          ),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.lightSurfaceElevated,
+        surfaceTintColor: Colors.transparent,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.lightSurfaceElevated,
+        side: const BorderSide(color: AppColors.lightBorder),
+        shape: const RoundedRectangleBorder(borderRadius: AppSpacing.roundedSm),
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: AppColors.lightTextPrimary,
+        ),
       ),
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.lightAccent,

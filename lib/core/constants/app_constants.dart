@@ -18,4 +18,3 @@ abstract final class AppConstants {
   static const String databaseName = 'sonora.db';
   static const int databaseSchemaVersion = 1;
 }
-

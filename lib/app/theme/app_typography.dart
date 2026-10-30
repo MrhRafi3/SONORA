@@ -164,4 +164,3 @@ abstract final class AppTypography {
     );
   }
 }
-
