@@ -66,7 +66,9 @@ class PlayerScreen extends ConsumerWidget {
                         track: track,
                         isPlaying: isCurrent && playerState.isPlaying,
                         onTap: () {
-                          ref.read(playerProvider.notifier).playTrack(track);
+                          ref
+                              .read(playerProvider.notifier)
+                              .playQueueIndex(index);
                           Navigator.pop(context);
                         },
                       );

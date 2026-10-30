@@ -91,6 +91,8 @@ class AudioTrack {
       album: displayAlbum,
       duration: duration,
       audioFormat: fileExtension.toUpperCase(),
+      sourceUri: sourceUri,
+      filePath: filePath,
       sampleRate: sampleRateHz != null
           ? '${(sampleRateHz! / 1000).toStringAsFixed(1)} kHz'
           : '44.1 kHz',

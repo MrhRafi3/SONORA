@@ -10,6 +10,8 @@ class UiTrack {
     required this.album,
     required this.duration,
     required this.audioFormat,
+    this.sourceUri,
+    this.filePath,
     this.sampleRate = '96 kHz',
     this.bitDepth = '24-bit',
     this.artworkColor = const Color(0xFF2C2523),
@@ -24,6 +26,8 @@ class UiTrack {
   final String album;
   final Duration duration;
   final String audioFormat;
+  final String? sourceUri;
+  final String? filePath;
   final String sampleRate;
   final String bitDepth;
   final Color artworkColor;
@@ -46,6 +50,8 @@ class UiTrack {
     String? album,
     Duration? duration,
     String? audioFormat,
+    String? sourceUri,
+    String? filePath,
     String? sampleRate,
     String? bitDepth,
     Color? artworkColor,
@@ -60,6 +66,8 @@ class UiTrack {
       album: album ?? this.album,
       duration: duration ?? this.duration,
       audioFormat: audioFormat ?? this.audioFormat,
+      sourceUri: sourceUri ?? this.sourceUri,
+      filePath: filePath ?? this.filePath,
       sampleRate: sampleRate ?? this.sampleRate,
       bitDepth: bitDepth ?? this.bitDepth,
       artworkColor: artworkColor ?? this.artworkColor,

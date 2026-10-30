@@ -314,8 +314,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                       track: track,
                       isPlaying: isPlaying,
                       trackIndex: index + 1,
-                      onTap: () =>
-                          ref.read(playerProvider.notifier).playTrack(track),
+                      onTap: () => ref
+                          .read(playerProvider.notifier)
+                          .playTrack(track, queue: activeUiTracks),
                     );
                   },
                 ),
@@ -420,7 +421,9 @@ class _AlbumsView extends ConsumerWidget {
       itemBuilder: (context, index) {
         final track = showcaseTracks[index];
         return GestureDetector(
-          onTap: () => ref.read(playerProvider.notifier).playTrack(track),
+          onTap: () => ref
+              .read(playerProvider.notifier)
+              .playTrack(track, queue: showcaseTracks),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -562,7 +565,9 @@ class _ArtistsView extends ConsumerWidget {
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => ref.read(playerProvider.notifier).playTrack(track),
+            onTap: () => ref
+                .read(playerProvider.notifier)
+                .playTrack(track, queue: showcaseTracks),
             borderRadius: AppSpacing.roundedMd,
             child: Container(
               padding: AppSpacing.insetsMd,

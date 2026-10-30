@@ -226,7 +226,9 @@ class _SearchResultsView extends ConsumerWidget {
             return TrackTile(
               track: track,
               isPlaying: isPlaying,
-              onTap: () => ref.read(playerProvider.notifier).playTrack(track),
+              onTap: () => ref
+                  .read(playerProvider.notifier)
+                  .playTrack(track, queue: uiTracks),
             );
           },
         );
