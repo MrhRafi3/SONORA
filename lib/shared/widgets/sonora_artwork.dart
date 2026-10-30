@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../app/theme/app_spacing.dart';
 
-/// A premium procedural artwork tile evoking vinyl grooves and high-end hardware finishes.
+/// A premium artwork tile displaying real album art when cached on disk,
+/// with procedural vinyl grooves and hardware finishes as an elegant fallback.
 class SonoraArtwork extends StatelessWidget {
   const SonoraArtwork({
     super.key,
@@ -11,6 +13,7 @@ class SonoraArtwork extends StatelessWidget {
     this.borderRadius,
     this.showGlow = false,
     this.heroTag,
+    this.artworkPath,
   });
 
   final double size;
@@ -19,37 +22,87 @@ class SonoraArtwork extends StatelessWidget {
   final BorderRadius? borderRadius;
   final bool showGlow;
   final String? heroTag;
+  final String? artworkPath;
 
   @override
   Widget build(BuildContext context) {
     final effectiveRadius = borderRadius ?? AppSpacing.roundedMd;
+    final hasRealArtwork = artworkPath != null && artworkPath!.isNotEmpty;
 
-    Widget artwork = Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final effectiveSize = size.isInfinite
+            ? (constraints.maxWidth.isFinite
+                  ? constraints.maxWidth
+                  : (constraints.maxHeight.isFinite
+                        ? constraints.maxHeight
+                        : 160.0))
+            : size;
+
+        Widget content;
+        if (hasRealArtwork) {
+          content = ClipRRect(
+            borderRadius: effectiveRadius,
+            child: Image.file(
+              File(artworkPath!),
+              width: effectiveSize,
+              height: effectiveSize,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _buildProceduralVinyl(effectiveSize),
+            ),
+          );
+        } else {
+          content = _buildProceduralVinyl(effectiveSize);
+        }
+
+        Widget artwork = Container(
+          width: size.isInfinite ? double.infinity : effectiveSize,
+          height: size.isInfinite ? double.infinity : effectiveSize,
+          decoration: BoxDecoration(
+            borderRadius: effectiveRadius,
+            boxShadow: showGlow
+                ? [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.22),
+                      blurRadius: 28,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 8),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.45),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.28),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
+          child: content,
+        );
+
+        if (heroTag != null) {
+          artwork = Hero(tag: heroTag!, child: artwork);
+        }
+
+        return artwork;
+      },
+    );
+  }
+
+  Widget _buildProceduralVinyl(double size) {
+    return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: effectiveRadius,
-        boxShadow: showGlow
-            ? [
-                BoxShadow(
-                  color: accentColor.withValues(alpha: 0.22),
-                  blurRadius: 28,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.45),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.28),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -57,10 +110,6 @@ class SonoraArtwork extends StatelessWidget {
             primaryColor,
             Color.lerp(primaryColor, Colors.black, 0.4) ?? Colors.black,
           ],
-        ),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
-          width: 1,
         ),
       ),
       child: Stack(
@@ -100,12 +149,6 @@ class SonoraArtwork extends StatelessWidget {
         ],
       ),
     );
-
-    if (heroTag != null) {
-      artwork = Hero(tag: heroTag!, child: artwork);
-    }
-
-    return artwork;
   }
 }
 
@@ -133,7 +176,7 @@ class _VinylGroovesPainter extends CustomPainter {
       canvas.drawCircle(center, r, groovePaint);
     }
 
-    // Subtle highlighted outer groove
+    // Highlighted outer groove
     canvas.drawCircle(center, maxRadius * 0.92, highlightPaint);
   }
 

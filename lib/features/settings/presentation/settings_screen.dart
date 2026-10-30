@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/settings_tile.dart';
+import '../../library/presentation/library_providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -74,9 +76,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _handleRescan() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Starting audio library scan...')),
+    );
+
+    if (Platform.isAndroid) {
+      final summary = await ref
+          .read(scanStatusProvider.notifier)
+          .startAndroidScan();
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            summary.isSuccess
+                ? 'Scan complete: discovered ${summary.newlyAddedCount} new tracks.'
+                : (summary.errorMessage ?? 'Audio scan failed.'),
+          ),
+        ),
+      );
+    } else {
+      final summary = await ref
+          .read(scanStatusProvider.notifier)
+          .startIosImport();
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            summary.isSuccess
+                ? 'Import complete: added ${summary.newlyAddedCount} audio files.'
+                : (summary.errorMessage ?? 'Audio import failed.'),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentThemeMode = ref.watch(themeModeProvider);
+    final stats = ref.watch(libraryStatsProvider);
+    final isScanning = ref.watch(scanStatusProvider).isScanning;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -184,16 +225,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: AppSpacing.md),
 
             // Section: Library & Storage
-            const SectionHeader(title: 'Storage & Indexing'),
+            const SectionHeader(
+              title: 'Storage & Indexing',
+              subtitle: 'SQLite Drift database index',
+            ),
             SettingsTile(
-              title: 'Music Folders',
-              subtitle: 'Android MediaStore & Scoped Storage',
+              title: 'Indexed Library Stats',
+              subtitle:
+                  '${stats.trackCount} tracks • ${stats.albumCount} albums • ${stats.formattedStorageSize}',
+              icon: Icons.analytics_outlined,
+            ),
+            SettingsTile(
+              title: 'Music Folders & Platform Storage',
+              subtitle: Platform.isAndroid
+                  ? 'Android MediaStore & Scoped Storage'
+                  : 'iOS Sandboxed Documents & File Picker',
               icon: Icons.folder_rounded,
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      'Folder selector activates with Drift scanner in Phase 03.',
+                      Platform.isAndroid
+                          ? 'Android MediaStore discovers tracks in standard Music and Audio directories.'
+                          : 'iOS stores imported audio tracks in the sandboxed Documents directory.',
                     ),
                   ),
                 );
@@ -201,17 +255,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             SettingsTile(
               title: 'Rescan Audio Library',
-              subtitle: 'Scan for modified ID3 tags and new files',
-              icon: Icons.sync_rounded,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Offline indexer ready for Phase 03 scan integration.',
-                    ),
-                  ),
-                );
-              },
+              subtitle: isScanning
+                  ? 'Indexing in progress...'
+                  : 'Scan for modified ID3 tags and new files',
+              icon: isScanning
+                  ? Icons.hourglass_top_rounded
+                  : Icons.sync_rounded,
+              onTap: isScanning ? null : _handleRescan,
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -219,14 +269,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SectionHeader(title: 'About SONORA'),
             SettingsTile(
               title: 'Version & Build',
-              subtitle: 'v1.0.0 (Phase 02 UI Foundation)',
+              subtitle: 'v1.0.0 (Phase 03 Audio Library & Metadata Engine)',
               icon: Icons.info_outline_rounded,
-              trailing: const FormatBadge(label: 'Phase 02', isGold: true),
+              trailing: const FormatBadge(label: 'Phase 03', isGold: true),
             ),
             SettingsTile(
               title: 'Engine Architecture',
               subtitle:
-                  'Clean Architecture • Riverpod • GoRouter • C++ FFI Ready',
+                  'Clean Architecture • Drift SQLite • Audio Metadata Reader • C++ FFI Ready',
               icon: Icons.memory_rounded,
             ),
             SettingsTile(

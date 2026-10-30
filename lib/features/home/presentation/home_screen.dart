@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,17 +10,67 @@ import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
 import '../../../shared/widgets/track_tile.dart';
+import '../../library/presentation/library_providers.dart';
+import '../../player/domain/ui_track.dart';
 import '../../player/presentation/player_state.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
+
+  Future<void> _handleScanImport(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Starting audio scan...')),
+    );
+
+    if (Platform.isAndroid) {
+      final summary = await ref
+          .read(scanStatusProvider.notifier)
+          .startAndroidScan();
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            summary.isSuccess
+                ? 'Discovered ${summary.newlyAddedCount} tracks in MediaStore.'
+                : (summary.errorMessage ?? 'Scan failed.'),
+          ),
+        ),
+      );
+    } else {
+      final summary = await ref
+          .read(scanStatusProvider.notifier)
+          .startIosImport();
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            summary.isSuccess
+                ? 'Imported ${summary.newlyAddedCount} audio files.'
+                : (summary.errorMessage ?? 'Import failed.'),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final sonora = context.sonoraTheme;
     final playerState = ref.watch(playerProvider);
-    final isLibraryEmpty = ref.watch(libraryEmptyStateProvider);
+    final isShowcaseActive = ref.watch(libraryEmptyStateProvider);
+
+    final tracksAsync = ref.watch(tracksStreamProvider);
+    final realTracks = tracksAsync.asData?.value ?? [];
+
+    final hasRealMusic = realTracks.isNotEmpty;
+    final displayShowcase = isShowcaseActive && !hasRealMusic;
+
+    // Use real tracks if available, otherwise showcase tracks if enabled, or empty
+    final activeTracks = hasRealMusic
+        ? realTracks.map((t) => t.toUiTrack()).toList()
+        : (displayShowcase ? kShowcaseTracks : <UiTrack>[]);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,23 +128,18 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         top: false,
-        child: isLibraryEmpty
+        child: (!hasRealMusic && !displayShowcase)
             ? EmptyStateView(
                 title: 'Your Music Library is Quiet',
-                message:
-                    'SONORA indexes uncompressed MP3, FLAC, and WAV audio from your device storage. No audio files are currently indexed.',
+                message: Platform.isAndroid
+                    ? 'SONORA discovers and indexes lossless audio stored in your Android MediaStore. Tap below to scan your device.'
+                    : 'Import high-resolution MP3, FLAC, and WAV audio from the iOS Files app into your offline SONORA library.',
                 icon: Icons.album_outlined,
-                actionLabel: 'Select Audio Directory',
-                onAction: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Folder selection & SAF scanner will activate in Phase 03.',
-                      ),
-                    ),
-                  );
-                },
-                secondaryActionLabel: 'View Design System Showcase',
+                actionLabel: Platform.isAndroid
+                    ? 'Scan Device Storage'
+                    : 'Import Audio from Files',
+                onAction: () => _handleScanImport(context, ref),
+                secondaryActionLabel: 'View Showcase Preview',
                 onSecondaryAction: () =>
                     ref.read(libraryEmptyStateProvider.notifier).toggle(),
               )
@@ -115,7 +161,9 @@ class HomeScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Master-Quality Audio',
+                                  hasRealMusic
+                                      ? 'Offline Library'
+                                      : 'Master-Quality Audio',
                                   style: theme.textTheme.headlineMedium
                                       ?.copyWith(
                                         fontWeight: FontWeight.w800,
@@ -124,7 +172,9 @@ class HomeScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Bit-perfect offline digital playback',
+                                  hasRealMusic
+                                      ? '${realTracks.length} indexed lossless track${realTracks.length == 1 ? '' : 's'}'
+                                      : 'Bit-perfect offline digital playback',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: theme.colorScheme.onSurface
                                         .withValues(alpha: 0.6),
@@ -133,196 +183,219 @@ class HomeScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          // Quick toggle to preview empty state vs showcase
-                          ActionChip(
-                            avatar: const Icon(
-                              Icons.visibility_outlined,
-                              size: 14,
+                          if (!hasRealMusic)
+                            ActionChip(
+                              avatar: const Icon(
+                                Icons.visibility_outlined,
+                                size: 14,
+                              ),
+                              label: const Text('Showcase Mode'),
+                              visualDensity: VisualDensity.compact,
+                              labelStyle: const TextStyle(fontSize: 11),
+                              onPressed: () => ref
+                                  .read(libraryEmptyStateProvider.notifier)
+                                  .toggle(),
+                            )
+                          else
+                            IconButton(
+                              icon: const Icon(Icons.sync_rounded),
+                              tooltip: 'Rescan Audio Library',
+                              onPressed: () => _handleScanImport(context, ref),
                             ),
-                            label: const Text('Empty State View'),
-                            visualDensity: VisualDensity.compact,
-                            labelStyle: const TextStyle(fontSize: 11),
-                            onPressed: () => ref
-                                .read(libraryEmptyStateProvider.notifier)
-                                .toggle(),
-                          ),
                         ],
                       ),
                     ),
                   ),
 
                   // Featured Spotlight Card
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      child: Container(
-                        padding: AppSpacing.insetsMd,
-                        decoration: BoxDecoration(
-                          gradient: sonora.cardGradient,
-                          borderRadius: AppSpacing.roundedLg,
-                          border: Border.all(
-                            color: theme.colorScheme.outline.withValues(
-                              alpha: 0.2,
-                            ),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              blurRadius: 18,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const SonoraArtwork(
-                              size: 96,
-                              primaryColor: Color(0xFF2C1E18),
-                              accentColor: Color(0xFFF0B27A),
-                              showGlow: true,
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const FormatBadge(
-                                    label: 'Direct-to-DSD • 192 kHz',
-                                    isGold: true,
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'Acoustic Resonance in D Minor',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Julian Bream & John Williams',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  FilledButton.icon(
-                                    onPressed: () => ref
-                                        .read(playerProvider.notifier)
-                                        .playTrack(kShowcaseTracks[1]),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.darkAccent,
-                                      foregroundColor: Colors.black,
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
-                                        vertical: AppSpacing.xs,
-                                      ),
-                                    ),
-                                    icon: const Icon(
-                                      Icons.play_arrow_rounded,
-                                      size: 18,
-                                    ),
-                                    label: const Text(
-                                      'Play Spotlight',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Section: Recently Played Horizontal Carousel
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.sm),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SectionHeader(
-                      title: 'Recently Played',
-                      subtitle: 'Direct hardware history',
-                      actionLabel: 'See All',
-                      onAction: () => context.go('/library'),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 184,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
+                  if (activeTracks.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
                         ),
-                        itemCount: kShowcaseTracks.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(width: AppSpacing.md),
-                        itemBuilder: (context, index) {
-                          final track = kShowcaseTracks[index];
-                          final isCurrentlyActive =
-                              playerState.track?.id == track.id;
-
-                          return GestureDetector(
-                            onTap: () => ref
-                                .read(playerProvider.notifier)
-                                .playTrack(track),
-                            child: SizedBox(
-                              width: 124,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SonoraArtwork(
-                                    size: 124,
-                                    primaryColor: track.artworkColor,
-                                    accentColor: track.accentColor,
-                                    showGlow: isCurrentlyActive,
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    track.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                      color: isCurrentlyActive
-                                          ? AppColors.darkAccent
-                                          : theme.colorScheme.onSurface,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12.5,
-                                    ),
-                                  ),
-                                  Text(
-                                    track.artist,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      fontSize: 11,
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                ],
+                        child: Container(
+                          padding: AppSpacing.insetsMd,
+                          decoration: BoxDecoration(
+                            gradient: sonora.cardGradient,
+                            borderRadius: AppSpacing.roundedLg,
+                            border: Border.all(
+                              color: theme.colorScheme.outline.withValues(
+                                alpha: 0.2,
                               ),
+                              width: 1,
                             ),
-                          );
-                        },
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              SonoraArtwork(
+                                size: 96,
+                                primaryColor: activeTracks.first.artworkColor,
+                                accentColor: activeTracks.first.accentColor,
+                                artworkPath: activeTracks.first.artworkPath,
+                                showGlow: true,
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    FormatBadge(
+                                      label: activeTracks.first.formatBadge,
+                                      isGold: true,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      activeTracks.first.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${activeTracks.first.artist} • ${activeTracks.first.album}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.sm),
+                                    FilledButton.icon(
+                                      onPressed: () => ref
+                                          .read(playerProvider.notifier)
+                                          .playTrack(
+                                            activeTracks.first,
+                                            queue: activeTracks,
+                                          ),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.darkAccent,
+                                        foregroundColor: Colors.black,
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.md,
+                                          vertical: AppSpacing.xs,
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.play_arrow_rounded,
+                                        size: 18,
+                                      ),
+                                      label: const Text(
+                                        'Play Spotlight',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
 
-                  // Section: Quick Mixes & Playlists
+                  // Section: Recently Added / Played Carousel
+                  if (activeTracks.isNotEmpty) ...[
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.sm),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SectionHeader(
+                        title: hasRealMusic
+                            ? 'Recently Added'
+                            : 'Recently Played',
+                        subtitle: hasRealMusic
+                            ? 'Offline storage index'
+                            : 'Direct hardware history',
+                        actionLabel: 'See All',
+                        onAction: () => context.go('/library'),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 184,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          itemCount: activeTracks.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: AppSpacing.md),
+                          itemBuilder: (context, index) {
+                            final track = activeTracks[index];
+                            final isCurrentlyActive =
+                                playerState.track?.id == track.id;
+
+                            return GestureDetector(
+                              onTap: () => ref
+                                  .read(playerProvider.notifier)
+                                  .playTrack(track, queue: activeTracks),
+                              child: SizedBox(
+                                width: 124,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SonoraArtwork(
+                                      size: 124,
+                                      primaryColor: track.artworkColor,
+                                      accentColor: track.accentColor,
+                                      artworkPath: track.artworkPath,
+                                      showGlow: isCurrentlyActive,
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      track.title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            color: isCurrentlyActive
+                                                ? AppColors.darkAccent
+                                                : theme.colorScheme.onSurface,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 12.5,
+                                          ),
+                                    ),
+                                    Text(
+                                      track.artist,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            fontSize: 11,
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Section: Curated Playlists
                   const SliverToBoxAdapter(
                     child: SizedBox(height: AppSpacing.sm),
                   ),
@@ -331,15 +404,7 @@ class HomeScreen extends ConsumerWidget {
                       title: 'Curated Playlists',
                       subtitle: 'Lossless collections',
                       actionLabel: 'New',
-                      onAction: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Playlist creation available in Phase 03.',
-                            ),
-                          ),
-                        );
-                      },
+                      onAction: () => context.go('/library'),
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -352,24 +417,38 @@ class HomeScreen extends ConsumerWidget {
                           Expanded(
                             child: _PlaylistCard(
                               title: 'Late Night Vinyl',
-                              countText: '24 Tracks • FLAC',
+                              countText: 'Lossless Collection',
                               accentColor: const Color(0xFFE59866),
                               icon: Icons.graphic_eq_rounded,
-                              onTap: () => ref
-                                  .read(playerProvider.notifier)
-                                  .playTrack(kShowcaseTracks[0]),
+                              onTap: () {
+                                if (activeTracks.isNotEmpty) {
+                                  ref
+                                      .read(playerProvider.notifier)
+                                      .playTrack(
+                                        activeTracks.first,
+                                        queue: activeTracks,
+                                      );
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: _PlaylistCard(
-                              title: 'Vacuum Tube Sessions',
-                              countText: '18 Tracks • DSD',
+                              title: 'High-Res Studio Masters',
+                              countText: 'Direct DSD / FLAC',
                               accentColor: const Color(0xFFE5C07B),
                               icon: Icons.album_rounded,
-                              onTap: () => ref
-                                  .read(playerProvider.notifier)
-                                  .playTrack(kShowcaseTracks[2]),
+                              onTap: () {
+                                if (activeTracks.isNotEmpty) {
+                                  ref
+                                      .read(playerProvider.notifier)
+                                      .playTrack(
+                                        activeTracks.last,
+                                        queue: activeTracks,
+                                      );
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -377,29 +456,36 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
 
-                  // Section: Showcase Track List
-                  const SliverToBoxAdapter(
-                    child: SizedBox(height: AppSpacing.md),
-                  ),
-                  const SliverToBoxAdapter(
-                    child: SectionHeader(
-                      title: 'Audiophile Showcase Catalog',
-                      subtitle: 'Tap any track to preview player surface',
+                  // Section: Library Track List
+                  if (activeTracks.isNotEmpty) ...[
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.md),
                     ),
-                  ),
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final track = kShowcaseTracks[index];
-                      final isSelected = playerState.track?.id == track.id;
+                    SliverToBoxAdapter(
+                      child: SectionHeader(
+                        title: hasRealMusic
+                            ? 'Indexed Tracks'
+                            : 'Showcase Catalog',
+                        subtitle: hasRealMusic
+                            ? 'Saved in local SQLite database'
+                            : 'Tap any track to preview player surface',
+                      ),
+                    ),
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final track = activeTracks[index];
+                        final isSelected = playerState.track?.id == track.id;
 
-                      return TrackTile(
-                        track: track,
-                        isPlaying: isSelected && playerState.isPlaying,
-                        onTap: () =>
-                            ref.read(playerProvider.notifier).playTrack(track),
-                      );
-                    }, childCount: kShowcaseTracks.length),
-                  ),
+                        return TrackTile(
+                          track: track,
+                          isPlaying: isSelected && playerState.isPlaying,
+                          onTap: () => ref
+                              .read(playerProvider.notifier)
+                              .playTrack(track, queue: activeTracks),
+                        );
+                      }, childCount: activeTracks.length),
+                    ),
+                  ],
                   const SliverToBoxAdapter(
                     child: SizedBox(height: AppSpacing.xl),
                   ),

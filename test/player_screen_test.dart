@@ -33,6 +33,10 @@ void main() {
       // Verify play/pause toggle interaction
       final playButton = find.byType(Slider);
       expect(playButton, findsOneWidget);
+
+      // Clean unmount
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 100));
     },
   );
 }

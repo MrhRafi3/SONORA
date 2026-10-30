@@ -34,6 +34,9 @@ void main() {
     await tester.tap(find.text('System'));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), ThemeMode.system);
+
+    // Clean unmount
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
   });
 }
-

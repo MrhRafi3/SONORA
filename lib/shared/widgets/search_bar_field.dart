@@ -80,4 +80,3 @@ class SearchBarField extends StatelessWidget {
     );
   }
 }
-

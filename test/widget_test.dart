@@ -28,5 +28,9 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
     await tester.pumpAndSettle();
     expect(find.text('Curated Playlists'), findsOneWidget);
+
+    // Clean unmount to drain Drift stream disposal timers
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
   });
 }

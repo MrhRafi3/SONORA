@@ -23,6 +23,9 @@ class PlayerScreen extends ConsumerWidget {
       ),
       builder: (context) {
         final playerState = ref.watch(playerProvider);
+        final queueTracks = playerState.queue.isNotEmpty
+            ? playerState.queue
+            : kShowcaseTracks;
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -54,9 +57,9 @@ class PlayerScreen extends ConsumerWidget {
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
-                    itemCount: kShowcaseTracks.length,
+                    itemCount: queueTracks.length,
                     itemBuilder: (context, index) {
-                      final track = kShowcaseTracks[index];
+                      final track = queueTracks[index];
                       final isCurrent = playerState.track?.id == track.id;
 
                       return TrackTile(
@@ -248,6 +251,7 @@ class PlayerScreen extends ConsumerWidget {
                           borderRadius: AppSpacing.roundedXl,
                           showGlow: true,
                           heroTag: 'now-playing-art',
+                          artworkPath: track.artworkPath,
                         ),
 
                         const SizedBox(height: AppSpacing.lg),

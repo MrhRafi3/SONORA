@@ -68,7 +68,7 @@ final List<UiTrack> kShowcaseTracks = [
   ),
 ];
 
-/// Immutable state for the interactive player surface in Phase 02.
+/// Immutable state for the interactive player surface in SONORA.
 @immutable
 class PlayerState {
   const PlayerState({
@@ -77,6 +77,7 @@ class PlayerState {
     this.position = Duration.zero,
     this.isShuffle = false,
     this.repeatMode = PlaybackRepeatMode.off,
+    this.queue = const [],
   });
 
   final UiTrack? track;
@@ -84,6 +85,7 @@ class PlayerState {
   final Duration position;
   final bool isShuffle;
   final PlaybackRepeatMode repeatMode;
+  final List<UiTrack> queue;
 
   double get progress {
     if (track == null || track!.duration.inMilliseconds == 0) return 0.0;
@@ -112,6 +114,7 @@ class PlayerState {
     Duration? position,
     bool? isShuffle,
     PlaybackRepeatMode? repeatMode,
+    List<UiTrack>? queue,
     bool clearTrack = false,
   }) {
     return PlayerState(
@@ -120,33 +123,38 @@ class PlayerState {
       position: position ?? this.position,
       isShuffle: isShuffle ?? this.isShuffle,
       repeatMode: repeatMode ?? this.repeatMode,
+      queue: queue ?? this.queue,
     );
   }
 }
 
-/// Notifier governing the UI player simulation during Phase 02.
+/// Notifier governing the UI player simulation during Phase 02/03.
 class PlayerNotifier extends Notifier<PlayerState> {
   @override
   PlayerState build() {
-    // Initialized with first showcase track in paused state for instant UI preview
-    return PlayerState(
-      track: kShowcaseTracks.first,
-      isPlaying: false,
-      position: const Duration(minutes: 1, seconds: 24),
-    );
+    return PlayerState(track: kShowcaseTracks.first);
   }
 
-  void playTrack(UiTrack track) {
+  void playTrack(UiTrack track, {List<UiTrack>? queue}) {
     state = state.copyWith(
       track: track,
       isPlaying: true,
       position: Duration.zero,
+      queue:
+          queue ??
+          (state.queue.contains(track) ? state.queue : [...state.queue, track]),
     );
   }
 
+  void setQueue(List<UiTrack> newQueue) {
+    state = state.copyWith(queue: newQueue);
+  }
+
   void togglePlayPause() {
-    if (state.track == null && kShowcaseTracks.isNotEmpty) {
-      state = state.copyWith(track: kShowcaseTracks.first, isPlaying: true);
+    if (state.track == null) {
+      if (state.queue.isNotEmpty) {
+        state = state.copyWith(track: state.queue.first, isPlaying: true);
+      }
     } else {
       state = state.copyWith(isPlaying: !state.isPlaying);
     }
@@ -179,23 +187,25 @@ class PlayerNotifier extends Notifier<PlayerState> {
   }
 
   void nextTrack() {
-    if (kShowcaseTracks.isEmpty) return;
+    final activeQueue = state.queue.isNotEmpty ? state.queue : kShowcaseTracks;
+    if (activeQueue.isEmpty) return;
     final currentIndex = state.track != null
-        ? kShowcaseTracks.indexOf(state.track!)
+        ? activeQueue.indexOf(state.track!)
         : -1;
-    final nextIndex = (currentIndex + 1) % kShowcaseTracks.length;
-    playTrack(kShowcaseTracks[nextIndex]);
+    final nextIndex = (currentIndex + 1) % activeQueue.length;
+    playTrack(activeQueue[nextIndex]);
   }
 
   void previousTrack() {
-    if (kShowcaseTracks.isEmpty) return;
+    final activeQueue = state.queue.isNotEmpty ? state.queue : kShowcaseTracks;
+    if (activeQueue.isEmpty) return;
     final currentIndex = state.track != null
-        ? kShowcaseTracks.indexOf(state.track!)
+        ? activeQueue.indexOf(state.track!)
         : -1;
     final prevIndex = currentIndex <= 0
-        ? kShowcaseTracks.length - 1
+        ? activeQueue.length - 1
         : currentIndex - 1;
-    playTrack(kShowcaseTracks[prevIndex]);
+    playTrack(activeQueue[prevIndex]);
   }
 
   void dismissPlayer() {
@@ -210,7 +220,7 @@ final playerProvider = NotifierProvider<PlayerNotifier, PlayerState>(
 /// Provider to toggle between populated showcase UI and empty library state for testing.
 class LibraryEmptyStateNotifier extends Notifier<bool> {
   @override
-  bool build() => false;
+  bool build() => true;
 
   void toggle() => state = !state;
 }

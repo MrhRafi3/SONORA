@@ -70,6 +70,7 @@ class MiniPlayer extends ConsumerWidget {
                           accentColor: track.accentColor,
                           borderRadius: AppSpacing.roundedSm,
                           heroTag: 'now-playing-art',
+                          artworkPath: track.artworkPath,
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(

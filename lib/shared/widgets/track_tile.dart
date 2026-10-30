@@ -43,6 +43,7 @@ class TrackTile extends StatelessWidget {
                 size: 48,
                 primaryColor: track.artworkColor,
                 accentColor: track.accentColor,
+                artworkPath: track.artworkPath,
               ),
               const SizedBox(width: AppSpacing.md),
             ] else if (trackIndex != null) ...[

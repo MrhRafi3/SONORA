@@ -33,6 +33,10 @@ void main() {
 
     // 5. MiniPlayer remains visible across navigation
     expect(find.text('Clair de Lune (Audiophile Re-Master)'), findsOneWidget);
+
+    // Clean unmount to drain Drift stream disposal timers
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
   });
 
   testWidgets('AppShell adapts to wide tablet layout with NavigationRail', (
@@ -47,6 +51,9 @@ void main() {
 
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
+
+    // Clean unmount to drain Drift stream disposal timers
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 100));
   });
 }
-

@@ -7,6 +7,7 @@ import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/search_bar_field.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/track_tile.dart';
+import '../../library/presentation/library_providers.dart';
 import '../../player/domain/ui_track.dart';
 import '../../player/presentation/player_state.dart';
 
@@ -19,7 +20,6 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _query = '';
   List<String> _recentSearches = [
     'Debussy',
     'Direct DSD Master',
@@ -34,27 +34,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _onSearch(String value) {
-    setState(() => _query = value.trim());
+    ref.read(searchQueryProvider.notifier).setQuery(value.trim());
   }
 
   void _applyRecentSearch(String term) {
     _searchController.text = term;
-    setState(() => _query = term);
+    ref.read(searchQueryProvider.notifier).setQuery(term.trim());
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(searchQueryProvider.notifier).clear();
   }
 
   @override
   Widget build(BuildContext context) {
     final playerState = ref.watch(playerProvider);
-
-    final filteredTracks = _query.isEmpty
-        ? <UiTrack>[]
-        : kShowcaseTracks.where((t) {
-            final q = _query.toLowerCase();
-            return t.title.toLowerCase().contains(q) ||
-                t.artist.toLowerCase().contains(q) ||
-                t.album.toLowerCase().contains(q) ||
-                t.audioFormat.toLowerCase().contains(q);
-          }).toList();
+    final activeQuery = ref.watch(searchQueryProvider);
+    final isShowcaseActive = ref.watch(libraryEmptyStateProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Search')),
@@ -70,43 +67,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 controller: _searchController,
                 hintText: 'Search songs, albums, artists, or audio format...',
                 onChanged: _onSearch,
-                onClear: () => setState(() => _query = ''),
+                onClear: _clearSearch,
               ),
             ),
             Expanded(
-              child: _query.isNotEmpty
-                  ? (filteredTracks.isEmpty
-                        ? EmptyStateView(
-                            title: 'No Matching Audio',
-                            message:
-                                'We could not find any tracks matching "$_query". Try searching for artist, genre, or format.',
-                            icon: Icons.search_off_rounded,
-                            actionLabel: 'Clear Search',
-                            onAction: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.sm,
-                            ),
-                            itemCount: filteredTracks.length,
-                            itemBuilder: (context, index) {
-                              final track = filteredTracks[index];
-                              final isPlaying =
-                                  playerState.track?.id == track.id &&
-                                  playerState.isPlaying;
-
-                              return TrackTile(
-                                track: track,
-                                isPlaying: isPlaying,
-                                onTap: () => ref
-                                    .read(playerProvider.notifier)
-                                    .playTrack(track),
-                              );
-                            },
-                          ))
+              child: activeQuery.isNotEmpty
+                  ? _SearchResultsView(
+                      query: activeQuery,
+                      isShowcaseActive: isShowcaseActive,
+                      playerState: playerState,
+                      onClear: _clearSearch,
+                    )
                   : ListView(
                       padding: const EdgeInsets.symmetric(
                         vertical: AppSpacing.sm,
@@ -197,6 +168,71 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SearchResultsView extends ConsumerWidget {
+  const _SearchResultsView({
+    required this.query,
+    required this.isShowcaseActive,
+    required this.playerState,
+    required this.onClear,
+  });
+
+  final String query;
+  final bool isShowcaseActive;
+  final PlayerState playerState;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchResultsAsync = ref.watch(searchResultsProvider);
+
+    return searchResultsAsync.when(
+      data: (tracks) {
+        List<UiTrack> uiTracks = tracks.map((t) => t.toUiTrack()).toList();
+
+        // If real DB has no matches and showcase is active, filter showcase tracks
+        if (uiTracks.isEmpty && isShowcaseActive) {
+          final q = query.toLowerCase();
+          uiTracks = kShowcaseTracks.where((t) {
+            return t.title.toLowerCase().contains(q) ||
+                t.artist.toLowerCase().contains(q) ||
+                t.album.toLowerCase().contains(q) ||
+                t.audioFormat.toLowerCase().contains(q);
+          }).toList();
+        }
+
+        if (uiTracks.isEmpty) {
+          return EmptyStateView(
+            title: 'No Matching Audio',
+            message:
+                'We could not find any tracks matching "$query". Try searching for artist, genre, or format.',
+            icon: Icons.search_off_rounded,
+            actionLabel: 'Clear Search',
+            onAction: onClear,
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          itemCount: uiTracks.length,
+          itemBuilder: (context, index) {
+            final track = uiTracks[index];
+            final isPlaying =
+                playerState.track?.id == track.id && playerState.isPlaying;
+
+            return TrackTile(
+              track: track,
+              isPlaying: isPlaying,
+              onTap: () => ref.read(playerProvider.notifier).playTrack(track),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Search error: $err')),
     );
   }
 }

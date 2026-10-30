@@ -15,6 +15,7 @@ class UiTrack {
     this.artworkColor = const Color(0xFF2C2523),
     this.accentColor = const Color(0xFFE59866),
     this.isFavorite = false,
+    this.artworkPath,
   });
 
   final String id;
@@ -28,6 +29,7 @@ class UiTrack {
   final Color artworkColor;
   final Color accentColor;
   final bool isFavorite;
+  final String? artworkPath;
 
   String get formatBadge => '$audioFormat • $bitDepth/$sampleRate';
 
@@ -49,6 +51,7 @@ class UiTrack {
     Color? artworkColor,
     Color? accentColor,
     bool? isFavorite,
+    String? artworkPath,
   }) {
     return UiTrack(
       id: id ?? this.id,
@@ -62,6 +65,7 @@ class UiTrack {
       artworkColor: artworkColor ?? this.artworkColor,
       accentColor: accentColor ?? this.accentColor,
       isFavorite: isFavorite ?? this.isFavorite,
+      artworkPath: artworkPath ?? this.artworkPath,
     );
   }
 
@@ -73,4 +77,3 @@ class UiTrack {
   @override
   int get hashCode => id.hashCode;
 }
-
