@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../library/presentation/library_providers.dart';
 import '../data/fake_audio_player_facade.dart';
 import '../data/just_audio_player_facade.dart';
+import '../data/sonora_audio_handler.dart';
 import '../domain/audio_player_facade.dart';
 import '../domain/ui_track.dart';
 
 enum PlaybackRepeatMode { off, all, one }
+
+/// Provider exposing the single initialized [SonoraAudioHandler].
+/// In production, this is overridden in [main.dart] from [AudioService.init].
+final audioHandlerProvider = Provider<SonoraAudioHandler?>((ref) => null);
 
 /// Provider for the audio player abstraction facade.
 ///
@@ -20,7 +26,8 @@ final audioPlayerFacadeProvider = Provider<AudioPlayerFacade>((ref) {
     ref.onDispose(fake.dispose);
     return fake;
   }
-  final player = JustAudioPlayerFacade();
+  final handler = ref.watch(audioHandlerProvider) ?? SonoraAudioHandler();
+  final player = JustAudioPlayerFacade(audioHandler: handler);
   ref.onDispose(player.dispose);
   return player;
 });
@@ -205,10 +212,12 @@ class PlayerState {
 /// Production-ready PlayerNotifier governing real audio playback and queue state.
 class PlayerNotifier extends Notifier<PlayerState> {
   AudioPlayerFacade get _facade => ref.read(audioPlayerFacadeProvider);
+  SonoraAudioHandler? get _handler => ref.read(audioHandlerProvider);
 
   @override
   PlayerState build() {
     final facade = ref.watch(audioPlayerFacadeProvider);
+    final handler = ref.watch(audioHandlerProvider);
 
     final subPlaying = facade.isPlayingStream.listen((playing) {
       if (state.isPlaying != playing) {
@@ -237,6 +246,36 @@ class PlayerNotifier extends Notifier<PlayerState> {
     final subCompleted = facade.playbackCompletedStream.listen((_) {
       _onPlaybackCompleted();
     });
+
+    // Wire remote system controls from notification/lock screen to PlayerNotifier
+    if (handler != null) {
+      handler.onSkipToNext = () => nextTrack();
+      handler.onSkipToPrevious = () => previousTrack();
+      handler.onSkipToQueueItem = (idx) => playQueueIndex(idx);
+      handler.onSetRepeatMode = (mode) {
+        final repeat = switch (mode) {
+          AudioServiceRepeatMode.none => PlaybackRepeatMode.off,
+          AudioServiceRepeatMode.all => PlaybackRepeatMode.all,
+          AudioServiceRepeatMode.one => PlaybackRepeatMode.one,
+          _ => PlaybackRepeatMode.off,
+        };
+        state = state.copyWith(repeatMode: repeat);
+      };
+      handler.onSetShuffleMode = (mode) {
+        final shuffle = mode == AudioServiceShuffleMode.all;
+        if (state.isShuffle != shuffle) {
+          toggleShuffle();
+        }
+      };
+
+      ref.onDispose(() {
+        handler.onSkipToNext = null;
+        handler.onSkipToPrevious = null;
+        handler.onSkipToQueueItem = null;
+        handler.onSetRepeatMode = null;
+        handler.onSetShuffleMode = null;
+      });
+    }
 
     ref.onDispose(() {
       subPlaying.cancel();
@@ -303,6 +342,9 @@ class PlayerNotifier extends Notifier<PlayerState> {
       clearError: true,
     );
 
+    _handler?.updateActiveTrack(track);
+    _handler?.updateActiveQueue(updatedQueue);
+
     await _loadAndPlay(track);
   }
 
@@ -341,6 +383,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       originalQueue: List.unmodifiable(newQueue),
       queueIndex: 0,
     );
+    _handler?.updateActiveQueue(state.queue);
   }
 
   /// Appends a single track to the end of the queue.
@@ -351,6 +394,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       queue: List.unmodifiable(updatedQueue),
       originalQueue: List.unmodifiable(updatedOriginal),
     );
+    _handler?.updateActiveQueue(state.queue);
   }
 
   /// Removes a track at [index] from the active queue.
@@ -377,6 +421,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
         originalQueue: List.unmodifiable(updatedOriginal),
         queueIndex: newIndex,
       );
+      _handler?.updateActiveQueue(state.queue);
       await playQueueIndex(newIndex);
       return;
     }
@@ -386,6 +431,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       originalQueue: List.unmodifiable(updatedOriginal),
       queueIndex: newIndex,
     );
+    _handler?.updateActiveQueue(state.queue);
   }
 
   /// Plays a track at the given [index] in the active queue.
@@ -400,6 +446,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       isLoading: true,
       clearError: true,
     );
+    _handler?.updateActiveTrack(track);
     await _loadAndPlay(track);
   }
 
@@ -414,6 +461,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       isPlaying: false,
       position: Duration.zero,
     );
+    _handler?.updateActiveQueue(const []);
   }
 
   /// Toggles between playing and paused states.
@@ -494,6 +542,8 @@ class PlayerNotifier extends Notifier<PlayerState> {
         queue: newQueue,
         queueIndex: 0,
       );
+      _handler?.updateActiveQueue(newQueue);
+      _handler?.setShuffleMode(AudioServiceShuffleMode.all);
     } else {
       final restoredQueue = state.originalQueue.isNotEmpty
           ? state.originalQueue
@@ -508,6 +558,8 @@ class PlayerNotifier extends Notifier<PlayerState> {
         queue: restoredQueue,
         queueIndex: restoredIndex != -1 ? restoredIndex : 0,
       );
+      _handler?.updateActiveQueue(restoredQueue);
+      _handler?.setShuffleMode(AudioServiceShuffleMode.none);
     }
   }
 
@@ -519,6 +571,13 @@ class PlayerNotifier extends Notifier<PlayerState> {
       PlaybackRepeatMode.one => PlaybackRepeatMode.off,
     };
     state = state.copyWith(repeatMode: nextMode);
+
+    final serviceMode = switch (nextMode) {
+      PlaybackRepeatMode.off => AudioServiceRepeatMode.none,
+      PlaybackRepeatMode.all => AudioServiceRepeatMode.all,
+      PlaybackRepeatMode.one => AudioServiceRepeatMode.one,
+    };
+    _handler?.setRepeatMode(serviceMode);
   }
 
   /// Advances to the next track in queue or wraps/stops based on repeat mode.
@@ -584,6 +643,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       isPlaying: false,
       position: Duration.zero,
     );
+    _handler?.updateActiveQueue(const []);
   }
 }
 

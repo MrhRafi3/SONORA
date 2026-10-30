@@ -1,13 +1,21 @@
 import 'dart:async';
 import 'package:just_audio/just_audio.dart' as ja;
 import '../domain/audio_player_facade.dart';
+import 'sonora_audio_handler.dart';
 
-/// Concrete implementation of [AudioPlayerFacade] powered by `just_audio`.
+/// Concrete implementation of [AudioPlayerFacade] delegating to the single
+/// shared [SonoraAudioHandler], ensuring exactly one production [ja.AudioPlayer]
+/// instance operates across the entire application lifecycle.
 class JustAudioPlayerFacade implements AudioPlayerFacade {
-  JustAudioPlayerFacade({ja.AudioPlayer? player})
-    : _player = player ?? ja.AudioPlayer();
+  JustAudioPlayerFacade({required SonoraAudioHandler audioHandler})
+    : _audioHandler = audioHandler,
+      _player = audioHandler.player;
 
+  final SonoraAudioHandler _audioHandler;
   final ja.AudioPlayer _player;
+
+  /// Direct accessor for the underlying [SonoraAudioHandler].
+  SonoraAudioHandler get audioHandler => _audioHandler;
 
   @override
   Stream<bool> get isPlayingStream => _player.playingStream;
@@ -44,32 +52,24 @@ class JustAudioPlayerFacade implements AudioPlayerFacade {
 
   @override
   Future<void> load(String source, {bool isUri = false}) async {
-    final uri = Uri.tryParse(source);
-    final shouldUseUri =
-        isUri || (uri != null && uri.hasScheme && uri.scheme != 'file');
-
-    if (shouldUseUri) {
-      await _player.setAudioSource(ja.AudioSource.uri(Uri.parse(source)));
-    } else {
-      await _player.setAudioSource(ja.AudioSource.file(source));
-    }
+    await _audioHandler.load(source, isUri: isUri);
   }
 
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() => _audioHandler.play();
 
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> pause() => _audioHandler.pause();
 
   @override
-  Future<void> stop() => _player.stop();
+  Future<void> stop() => _audioHandler.stop();
 
   @override
-  Future<void> seek(Duration position) => _player.seek(position);
+  Future<void> seek(Duration position) => _audioHandler.seek(position);
 
   @override
   Future<void> setVolume(double volume) => _player.setVolume(volume);
 
   @override
-  Future<void> dispose() => _player.dispose();
+  Future<void> dispose() => _audioHandler.disposeHandler();
 }
