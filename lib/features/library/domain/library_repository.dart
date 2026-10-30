@@ -37,4 +37,3 @@ abstract class MusicLibraryRepository {
 
   Future<void> deleteTrack(String id);
 }
-
