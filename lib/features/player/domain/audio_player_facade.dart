@@ -56,4 +56,3 @@ abstract class AudioPlayerFacade {
   /// Releases resources held by the player.
   Future<void> dispose();
 }
-
