@@ -1,140 +1,41 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/app.dart';
-import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/theme_accent.dart';
-import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
-import '../../../shared/widgets/settings_tile.dart';
-import '../../library/presentation/library_providers.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
+/// Clean, consolidated, and responsive Settings root screen.
+///
+/// Provides quick appearance controls at the top and delegates detailed
+/// configurations to dedicated subpages for an uncluttered experience.
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _bitPerfect = true;
-  bool _replayGain = true;
-  bool _gapless = true;
-  bool _pauseOnUnplug = true;
-  double _crossfade = 2.0;
-
-  void _showCrossfadeDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        double currentVal = _crossfade;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: context.sonoraTheme.surfaceElevated,
-              shape: const RoundedRectangleBorder(
-                borderRadius: AppSpacing.roundedLg,
-              ),
-              title: const Text('Crossfade Duration'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${currentVal.toStringAsFixed(1)} seconds',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.darkAccent,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Slider(
-                    value: currentVal,
-                    min: 0.0,
-                    max: 8.0,
-                    divisions: 16,
-                    label: '${currentVal.toStringAsFixed(1)}s',
-                    onChanged: (val) {
-                      setDialogState(() => currentVal = val);
-                      setState(() => _crossfade = val);
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Done'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _handleRescan() async {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Starting audio library scan...')),
-    );
-
-    if (Platform.isAndroid) {
-      final summary = await ref
-          .read(scanStatusProvider.notifier)
-          .startAndroidScan();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Scan complete: discovered ${summary.newlyAddedCount} new tracks.'
-                : (summary.errorMessage ?? 'Audio scan failed.'),
-          ),
-        ),
-      );
-    } else {
-      final summary = await ref
-          .read(scanStatusProvider.notifier)
-          .startIosImport();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Import complete: added ${summary.newlyAddedCount} audio files.'
-                : (summary.errorMessage ?? 'Audio import failed.'),
-          ),
-        ),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final currentThemeMode = ref.watch(themeModeProvider);
     final currentAccent = ref.watch(themeAccentProvider);
-    final stats = ref.watch(libraryStatsProvider);
-    final isScanning = ref.watch(scanStatusProvider).isScanning;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           children: [
-            // Section: Appearance
-            const SectionHeader(title: 'Appearance'),
+            // Quick Appearance Section
+            const SectionHeader(
+              title: 'Appearance',
+              subtitle: 'Quick theme & accent controls',
+            ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.xs,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
               child: SegmentedButton<ThemeMode>(
                 segments: const [
                   ButtonSegment<ThemeMode>(
@@ -162,220 +63,290 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Audiophile Accent',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.7,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Audiophile Accent',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      currentAccent.name,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: currentAccent.accentColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: ThemeAccent.values.map((accent) {
+                    final isSelected = currentAccent == accent;
+                    return GestureDetector(
+                      onTap: () => ref
+                          .read(themeAccentProvider.notifier)
+                          .setAccent(accent),
+                      child: Tooltip(
+                        message: accent.name,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: accent.accentColor,
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              width: 2.5,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: accent.accentColor.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : null,
                           ),
-                          fontWeight: FontWeight.w600,
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: Colors.black,
+                                  size: 24,
+                                )
+                              : null,
                         ),
                       ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // Consolidated Category Navigation Cards
+            const SectionHeader(
+              title: 'Configuration Categories',
+              subtitle: 'Fine-tune playback, audio hardware & storage',
+            ),
+            _SettingsCategoryCard(
+              title: 'Playback & Audio',
+              subtitle:
+                  'Bit-perfect output, gapless playback, crossfade & pause on disconnect',
+              icon: Icons.play_circle_outline_rounded,
+              iconColor: currentAccent.accentColor,
+              onTap: () => context.push('/settings/playback'),
+            ),
+            _SettingsCategoryCard(
+              title: 'Equalizer & Sound',
+              subtitle:
+                  '10-band ISO standard graphic EQ, C++17 DSP core, presets & live spectrum',
+              icon: Icons.tune_rounded,
+              iconColor: currentAccent.accentColor,
+              badgeText: 'Parametric Equalizer',
+              onTap: () => context.push('/equalizer'),
+            ),
+            _SettingsCategoryCard(
+              title: 'Appearance & Personalization',
+              subtitle:
+                  'Detailed palette descriptions, contrast tuning & visual theme options',
+              icon: Icons.palette_outlined,
+              iconColor: currentAccent.accentColor,
+              onTap: () => context.push('/settings/appearance'),
+            ),
+            _SettingsCategoryCard(
+              title: 'Library & Storage',
+              subtitle:
+                  'Indexed collection statistics, platform storage paths & library rescanning',
+              icon: Icons.folder_outlined,
+              iconColor: currentAccent.accentColor,
+              onTap: () => context.push('/settings/library'),
+            ),
+            _SettingsCategoryCard(
+              title: 'Notifications & Media Session',
+              subtitle:
+                  'System lock screen controls, album artwork broadcast & notification style',
+              icon: Icons.notifications_none_rounded,
+              iconColor: currentAccent.accentColor,
+              onTap: () => context.push('/settings/notifications'),
+            ),
+            _SettingsCategoryCard(
+              title: 'Privacy & Permissions',
+              subtitle:
+                  '100% offline commitment, local signal processing & storage access',
+              icon: Icons.security_rounded,
+              iconColor: currentAccent.accentColor,
+              onTap: () => context.push('/settings/privacy'),
+            ),
+            _SettingsCategoryCard(
+              title: 'About SONORA',
+              subtitle:
+                  'v1.0.0 • Developer: Mrh Rafi • Engine architecture & source repository',
+              icon: Icons.info_outline_rounded,
+              iconColor: currentAccent.accentColor,
+              badgeText: 'Mrh Rafi',
+              onTap: () => context.push('/settings/about'),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// An elegant, animated category card for navigating to settings subpages.
+class _SettingsCategoryCard extends StatefulWidget {
+  const _SettingsCategoryCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.onTap,
+    this.badgeText,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback onTap;
+  final String? badgeText;
+
+  @override
+  State<_SettingsCategoryCard> createState() => _SettingsCategoryCardState();
+}
+
+class _SettingsCategoryCardState extends State<_SettingsCategoryCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sonora = context.sonoraTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _isPressed = true),
+        onTapUp: (_) => setState(() => _isPressed = false),
+        onTapCancel: () => setState(() => _isPressed = false),
+        onTap: widget.onTap,
+        child: AnimatedScale(
+          scale: _isPressed ? 0.985 : 1.0,
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: sonora.surfaceElevated,
+              borderRadius: AppSpacing.roundedMd,
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.16),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: widget.iconColor.withValues(alpha: 0.14),
+                    borderRadius: AppSpacing.roundedSm,
+                    border: Border.all(
+                      color: widget.iconColor.withValues(alpha: 0.35),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(widget.icon, size: 22, color: widget.iconColor),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              widget.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          if (widget.badgeText != null) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: widget.iconColor.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                widget.badgeText!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: widget.iconColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        currentAccent.name,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: currentAccent.accentColor,
-                          fontWeight: FontWeight.w700,
+                        widget.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: ThemeAccent.values.map((accent) {
-                      final isSelected = currentAccent == accent;
-                      return GestureDetector(
-                        onTap: () => ref
-                            .read(themeAccentProvider.notifier)
-                            .setAccent(accent),
-                        child: Tooltip(
-                          message: accent.name,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: accent.accentColor,
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.transparent,
-                                width: 2.5,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: accent.accentColor.withValues(
-                                          alpha: 0.6,
-                                        ),
-                                        blurRadius: 10,
-                                        spreadRadius: 1,
-                                      ),
-                                    ]
-                                  : null,
-                            ),
-                            child: isSelected
-                                ? const Icon(
-                                    Icons.check_rounded,
-                                    color: Colors.black,
-                                    size: 24,
-                                  )
-                                : null,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Section: Audio & Equalizer
-            const SectionHeader(
-              title: 'Audio & Hardware Engine',
-              subtitle: 'Bit-perfect signal path settings',
-            ),
-            SettingsTile(
-              title: 'Parametric Equalizer',
-              subtitle: '5-band frequency tuning & DSP presets',
-              icon: Icons.tune_rounded,
-              onTap: () => context.push('/equalizer'),
-            ),
-            SettingsTile(
-              title: 'Bit-Perfect Direct Output',
-              subtitle: 'Bypass platform mixer for lossless DAC streaming',
-              icon: Icons.graphic_eq_rounded,
-              trailing: Switch.adaptive(
-                value: _bitPerfect,
-                activeTrackColor: AppColors.darkAccent,
-                onChanged: (val) => setState(() => _bitPerfect = val),
-              ),
-            ),
-            SettingsTile(
-              title: 'ReplayGain Normalization',
-              subtitle: 'Preserve dynamic range while matching loudness',
-              icon: Icons.volume_up_rounded,
-              trailing: Switch.adaptive(
-                value: _replayGain,
-                activeTrackColor: AppColors.darkAccent,
-                onChanged: (val) => setState(() => _replayGain = val),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Section: Playback
-            const SectionHeader(title: 'Playback Behavior'),
-            SettingsTile(
-              title: 'Gapless Playback',
-              subtitle: 'Zero silence transition between continuous tracks',
-              icon: Icons.all_inclusive_rounded,
-              trailing: Switch.adaptive(
-                value: _gapless,
-                activeTrackColor: AppColors.darkAccent,
-                onChanged: (val) => setState(() => _gapless = val),
-              ),
-            ),
-            SettingsTile(
-              title: 'Crossfade Transition',
-              subtitle:
-                  '${_crossfade.toStringAsFixed(1)} seconds between tracks',
-              icon: Icons.alt_route_rounded,
-              onTap: _showCrossfadeDialog,
-            ),
-            SettingsTile(
-              title: 'Pause on Disconnect',
-              subtitle: 'Auto-pause playback when headphones are removed',
-              icon: Icons.headphones_outlined,
-              trailing: Switch.adaptive(
-                value: _pauseOnUnplug,
-                activeTrackColor: AppColors.darkAccent,
-                onChanged: (val) => setState(() => _pauseOnUnplug = val),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Section: Library & Storage
-            const SectionHeader(
-              title: 'Storage & Indexing',
-              subtitle: 'SQLite Drift database index',
-            ),
-            SettingsTile(
-              title: 'Indexed Library Stats',
-              subtitle:
-                  '${stats.trackCount} tracks • ${stats.albumCount} albums • ${stats.formattedStorageSize}',
-              icon: Icons.analytics_outlined,
-            ),
-            SettingsTile(
-              title: 'Music Folders & Platform Storage',
-              subtitle: Platform.isAndroid
-                  ? 'Android MediaStore & Scoped Storage'
-                  : 'iOS Sandboxed Documents & File Picker',
-              icon: Icons.folder_rounded,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      Platform.isAndroid
-                          ? 'Android MediaStore discovers tracks in standard Music and Audio directories.'
-                          : 'iOS stores imported audio tracks in the sandboxed Documents directory.',
-                    ),
-                  ),
-                );
-              },
-            ),
-            SettingsTile(
-              title: 'Rescan Audio Library',
-              subtitle: isScanning
-                  ? 'Indexing in progress...'
-                  : 'Scan for modified ID3 tags and new files',
-              icon: isScanning
-                  ? Icons.hourglass_top_rounded
-                  : Icons.sync_rounded,
-              onTap: isScanning ? null : _handleRescan,
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Section: About SONORA
-            const SectionHeader(title: 'About SONORA'),
-            SettingsTile(
-              title: 'Version & Build',
-              subtitle: 'v1.0.0 (Phase 03 Audio Library & Metadata Engine)',
-              icon: Icons.info_outline_rounded,
-              trailing: const FormatBadge(label: 'Phase 03', isGold: true),
-            ),
-            SettingsTile(
-              title: 'Engine Architecture',
-              subtitle:
-                  'Clean Architecture • Drift SQLite • Audio Metadata Reader • C++ FFI Ready',
-              icon: Icons.memory_rounded,
-            ),
-            SettingsTile(
-              title: 'Source Code Repository',
-              subtitle: 'https://github.com/MrhRafi3/SONORA',
-              icon: Icons.code_rounded,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Repository: https://github.com/MrhRafi3/SONORA',
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ],
+          ),
         ),
       ),
     );

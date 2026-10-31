@@ -147,7 +147,10 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: AppSpacing.xs,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   'C++17 Biquad DSP Core',
@@ -155,7 +158,6 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(width: AppSpacing.xs),
                                 FormatBadge(
                                   label: eqState.isNativeEngineConnected
                                       ? 'FFI Active'
@@ -193,8 +195,11 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
               // Band Mode Toggle (5-Band vs 10-Band ISO)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.xs,
                   children: [
                     Text(
                       'BAND ARCHITECTURE',
@@ -281,21 +286,64 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
 
               // Equalizer Slider Deck
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 child: SizedBox(
                   height: 220,
                   child: Opacity(
                     opacity: eqState.isEnabled ? 1.0 : 0.35,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: eqState.bands.map((band) {
-                        return _EqualizerSliderColumn(
-                          band: band,
-                          isEnabled: eqState.isEnabled,
-                          onGainChanged: (val) =>
-                              eqNotifier.setBandGain(band.index, val),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final bandCount = eqState.bands.length;
+                        const minColumnWidth = 36.0;
+                        final totalNeededWidth = bandCount * minColumnWidth;
+                        final shouldScroll =
+                            constraints.maxWidth < totalNeededWidth;
+
+                        final sliderContent = Row(
+                          mainAxisAlignment: shouldScroll
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.spaceEvenly,
+                          children: eqState.bands.map((band) {
+                            if (shouldScroll) {
+                              return SizedBox(
+                                width: (constraints.maxWidth / 6).clamp(
+                                  38.0,
+                                  52.0,
+                                ),
+                                child: _EqualizerSliderColumn(
+                                  band: band,
+                                  isEnabled: eqState.isEnabled,
+                                  onGainChanged: (val) =>
+                                      eqNotifier.setBandGain(band.index, val),
+                                ),
+                              );
+                            } else {
+                              return Expanded(
+                                child: _EqualizerSliderColumn(
+                                  band: band,
+                                  isEnabled: eqState.isEnabled,
+                                  onGainChanged: (val) =>
+                                      eqNotifier.setBandGain(band.index, val),
+                                ),
+                              );
+                            }
+                          }).toList(),
                         );
-                      }).toList(),
+
+                        if (shouldScroll) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                minWidth: constraints.maxWidth,
+                              ),
+                              child: sliderContent,
+                            ),
+                          );
+                        }
+                        return sliderContent;
+                      },
                     ),
                   ),
                 ),
@@ -319,10 +367,14 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: AppSpacing.md,
+                        runSpacing: AppSpacing.xs,
                         children: [
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(
                                 Icons.tune_rounded,
@@ -330,15 +382,22 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                                 color: AppColors.darkAccent,
                               ),
                               const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                'Acoustic Processing & Dynamics',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 220,
+                                ),
+                                child: Text(
+                                  'Acoustic Processing & Dynamics',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'Soft Limiter',
@@ -365,8 +424,11 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                       // Master Preamp Slider
                       Row(
                         children: [
-                          SizedBox(
-                            width: 110,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: 80,
+                              maxWidth: 105,
+                            ),
                             child: Text(
                               'Preamp Gain',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -412,8 +474,11 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                       // Sub-bass Enhancement Slider
                       Row(
                         children: [
-                          SizedBox(
-                            width: 110,
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              minWidth: 80,
+                              maxWidth: 105,
+                            ),
                             child: Text(
                               'Bass Enhancement',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -482,16 +547,20 @@ class _EqualizerScreenState extends ConsumerState<EqualizerScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'LIVE FREQUENCY SPECTRUM (32 BANDS)',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.1,
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.6,
+                          Flexible(
+                            child: Text(
+                              'LIVE FREQUENCY SPECTRUM (32 BANDS)',
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.1,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
                               ),
                             ),
                           ),
+                          const SizedBox(width: AppSpacing.xs),
                           Text(
                             isPlaying ? 'MONITORING' : 'IDLE',
                             style: theme.textTheme.labelSmall?.copyWith(

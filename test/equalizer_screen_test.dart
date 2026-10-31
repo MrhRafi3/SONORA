@@ -152,6 +152,46 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
       },
     );
+
+    testWidgets(
+      'EqualizerScreen renders on compact 320x480 and 360x640 screens without overflow',
+      (tester) async {
+        final origOnError = FlutterError.onError;
+        FlutterError.onError = (details) {
+          debugPrint('320_ERROR:\n${details.toString()}');
+          origOnError?.call(details);
+        };
+        addTearDown(() => FlutterError.onError = origOnError);
+
+        for (final size in [
+          const Size(320, 480),
+          const Size(360, 640),
+          const Size(412, 915),
+        ]) {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+
+          await tester.pumpWidget(
+            ProviderScope(
+              child: MaterialApp(
+                theme: AppTheme.darkTheme,
+                home: const EqualizerScreen(),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          final error = tester.takeException();
+          expect(error, isNull, reason: 'Failed on screen size: $size');
+
+          // Clean unmount
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pump();
+        }
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      },
+    );
   });
 
   group('WaveformProgressBar & Audio Sheets Tests', () {
