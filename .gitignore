@@ -31,7 +31,14 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+**/build/
 /coverage/
+
+# Compiled native binaries
+*.dylib
+*.so
+*.o
+*.a
 
 # Symbolication related
 app.*.symbols
@@ -48,6 +55,8 @@ app.*.map.json
 android/local.properties
 android/.gradle
 **/android/.gradle/
+.cxx/
+**/.cxx/
 **/android/captures/
 **/android/gradle/
 **/android/*.iml

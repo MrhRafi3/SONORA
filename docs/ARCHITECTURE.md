@@ -72,32 +72,40 @@ To prevent resource contention, audio device lockouts, and duplicate playback st
 
 A dedicated sub-package at `packages/sonora_audio_engine` is structured to provide high-performance native audio processing.
 
-### Planned Native C++ Architecture
+### Implemented Native C++ Architecture
 ```
 packages/sonora_audio_engine/
-├── CMakeLists.txt              # Cross-platform CMake build script (C++17)
+├── CMakeLists.txt              # Cross-platform CMake root script (C++17)
 ├── android/
-│   ├── build.gradle            # Gradle FFI plugin configuration
-│   └── CMakeLists.txt          # NDK toolchain build for arm64-v8a, armeabi-v7a, x86_64
+│   └── build.gradle            # Gradle FFI plugin configuration (AGP 8.7 / NDK 28)
 ├── ios/
-│   └── sonora_audio_engine.podspec  # CocoaPods FFI build specification
+│   ├── Classes/
+│   │   ├── sonora_audio_engine.h # Self-contained C header
+│   │   └── sonora_audio_engine.cpp # CocoaPods unity compilation unit
+│   └── sonora_audio_engine.podspec # CocoaPods iOS build specification (C++17)
+├── macos/
+│   ├── Classes/
+│   │   ├── sonora_audio_engine.h
+│   │   └── sonora_audio_engine.cpp
+│   └── sonora_audio_engine.podspec # CocoaPods macOS build specification (C++17)
 ├── include/
-│   └── sonora_audio_engine.h   # Pure C ABI header (extern "C")
+│   └── sonora_audio_engine.h   # Pure C ABI header (extern "C") with opaque handles
 ├── src/
-│   ├── engine.cpp              # Native engine lifecycle (init, configure, process, destroy)
+│   ├── CMakeLists.txt          # Shared library target (16k page alignment)
+│   ├── engine.cpp              # Engine lifecycle, parameter getters/setters, buffer processing
 │   ├── dsp/
-│   │   ├── biquad_filter.cpp   # Direct Form II Transposed IIR filter
-│   │   ├── equalizer.cpp       # N-band parametric/peaking/shelving filter bank
-│   │   └── preamp.cpp          # Gain staging with soft-clipping protection
+│   │   ├── biquad_filter.h/cpp # Direct Form II Transposed IIR filter with de-zippering
+│   │   ├── equalizer.h/cpp     # Cascaded 5-band and 10-band ISO standard filter bank
+│   │   └── preamp.h/cpp        # Preamp gain interpolation and soft-knee limiter
 │   └── analysis/
-│       ├── fft.cpp             # Fast Fourier Transform for frequency spectrum
-│       └── waveform.cpp        # Peak/RMS waveform chunk extraction
+│       ├── fft.h/cpp           # Radix-2 Cooley-Tukey DIT FFT + Hann window
+│       └── waveform.h/cpp      # Min/max/RMS waveform chunk extraction
 ├── test/
-│   └── test_dsp.cpp            # Native unit tests (frequency response, stability)
+│   └── native_dsp_test.cpp     # Standalone C++ unit test suite & latency benchmark
 └── lib/
-    ├── sonora_audio_engine.dart # Dart FFI wrapper and memory lifecycle manager
+    ├── sonora_audio_engine.dart # High-level Dart API with Finalizer & safe typed arrays
     └── src/
-        └── generated_bindings.dart # FFI bindings for C ABI
+        └── ffi_bindings.dart   # dart:ffi C function pointers and bindings
 ```
 
 ### Critical Playback & DSP Integration Architecture

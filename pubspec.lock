@@ -858,6 +858,13 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  sonora_audio_engine:
+    dependency: "direct main"
+    description:
+      path: "packages/sonora_audio_engine"
+      relative: true
+    source: path
+    version: "0.1.0"
   source_gen:
     dependency: transitive
     description:
