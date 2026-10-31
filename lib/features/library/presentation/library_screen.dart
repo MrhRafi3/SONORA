@@ -7,10 +7,12 @@ import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/format_badge.dart';
+import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
 import '../../../shared/widgets/track_tile.dart';
 import '../../player/domain/ui_track.dart';
 import '../../player/presentation/player_state.dart';
+import '../domain/smart_playlist.dart';
 import 'library_providers.dart';
 
 enum LibrarySortOption {
@@ -222,14 +224,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
     final theme = Theme.of(context);
     final isShowcaseActive = ref.watch(libraryEmptyStateProvider);
     final playerState = ref.watch(playerProvider);
+    final activeFilter = ref.watch(libraryAudioFilterProvider);
 
     final tracksAsync = ref.watch(tracksStreamProvider);
     final realTracks = tracksAsync.asData?.value ?? [];
     final hasRealMusic = realTracks.isNotEmpty;
     final displayShowcase = isShowcaseActive && !hasRealMusic;
 
+    final filteredTracks = ref.watch(filteredTracksProvider);
     final activeUiTracks = hasRealMusic
-        ? realTracks.map((t) => t.toUiTrack()).toList()
+        ? filteredTracks.map((t) => t.toUiTrack()).toList()
         : (displayShowcase ? kShowcaseTracks : <UiTrack>[]);
 
     final isScanning = ref.watch(scanStatusProvider).isScanning;
@@ -300,25 +304,86 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                // 1. Songs Tab
-                ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                  itemCount: activeUiTracks.length,
-                  itemBuilder: (context, index) {
-                    final track = activeUiTracks[index];
-                    final isPlaying =
-                        playerState.track?.id == track.id &&
-                        playerState.isPlaying;
+                // 1. Songs Tab with Format Filter Chips
+                Column(
+                  children: [
+                    if (hasRealMusic)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Row(
+                          children: LibraryAudioFilter.values.map((filter) {
+                            final isSelected = activeFilter == filter;
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                right: AppSpacing.xs,
+                              ),
+                              child: FilterChip(
+                                selected: isSelected,
+                                label: Text(filter.label),
+                                selectedColor: AppColors.darkAccent.withValues(
+                                  alpha: 0.18,
+                                ),
+                                checkmarkColor: AppColors.darkAccent,
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.darkAccent
+                                      : null,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                                onSelected: (_) {
+                                  ref
+                                      .read(libraryAudioFilterProvider.notifier)
+                                      .setFilter(filter);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    Expanded(
+                      child: activeUiTracks.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppSpacing.xl),
+                                child: Text(
+                                  'No tracks match "${activeFilter.label}" filter.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSpacing.sm,
+                              ),
+                              itemCount: activeUiTracks.length,
+                              itemBuilder: (context, index) {
+                                final track = activeUiTracks[index];
+                                final isPlaying =
+                                    playerState.track?.id == track.id &&
+                                    playerState.isPlaying;
 
-                    return TrackTile(
-                      track: track,
-                      isPlaying: isPlaying,
-                      trackIndex: index + 1,
-                      onTap: () => ref
-                          .read(playerProvider.notifier)
-                          .playTrack(track, queue: activeUiTracks),
-                    );
-                  },
+                                return TrackTile(
+                                  track: track,
+                                  isPlaying: isPlaying,
+                                  trackIndex: index + 1,
+                                  onTap: () => ref
+                                      .read(playerProvider.notifier)
+                                      .playTrack(track, queue: activeUiTracks),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
 
                 // 2. Albums Tab
@@ -643,7 +708,10 @@ class _PlaylistsView extends ConsumerWidget {
     final playlistsAsync = ref.watch(playlistsStreamProvider);
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       children: [
         FilledButton.tonalIcon(
           onPressed: onCreatePlaylist,
@@ -659,18 +727,124 @@ class _PlaylistsView extends ConsumerWidget {
           label: const Text('Create New Playlist'),
         ),
         const SizedBox(height: AppSpacing.md),
+
+        // Section: Smart Playlists
+        const SectionHeader(
+          title: 'Smart Collections',
+          subtitle: 'Dynamic collections evaluated on device',
+        ),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppSpacing.sm,
+          crossAxisSpacing: AppSpacing.sm,
+          childAspectRatio: 1.6,
+          children: SmartPlaylistType.values.map((type) {
+            final tracks = ref.watch(smartPlaylistTracksProvider(type));
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  context.push(
+                    '/playlist/${type.id}?name=${Uri.encodeComponent(type.name)}&smart=true',
+                  );
+                },
+                borderRadius: AppSpacing.roundedMd,
+                child: Container(
+                  padding: AppSpacing.insetsMd,
+                  decoration: BoxDecoration(
+                    color: sonora.surfaceElevated,
+                    borderRadius: AppSpacing.roundedMd,
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: type.accentColor.withValues(alpha: 0.18),
+                        ),
+                        child: Icon(
+                          type.icon,
+                          color: type.accentColor,
+                          size: 18,
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            type.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${tracks.length} tracks',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Section: Custom Playlists
+        SectionHeader(
+          title: 'Custom Playlists',
+          subtitle: 'Handcrafted listening queues',
+          actionLabel: 'New',
+          onAction: onCreatePlaylist,
+        ),
         playlistsAsync.when(
           data: (playlists) {
             if (playlists.isEmpty) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  child: Text(
-                    'No custom playlists yet.\nTap above to create one.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: Column(
+                    children: [
+                      Text(
+                        'No custom playlists yet.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      FilledButton.tonalIcon(
+                        onPressed: onCreatePlaylist,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: sonora.surfaceElevated,
+                          foregroundColor: AppColors.darkAccent,
+                        ),
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Create First Playlist'),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -689,6 +863,11 @@ class _PlaylistsView extends ConsumerWidget {
                   shape: const RoundedRectangleBorder(
                     borderRadius: AppSpacing.roundedMd,
                   ),
+                  onTap: () {
+                    context.push(
+                      '/playlist/${playlist.id}?name=${Uri.encodeComponent(playlist.name)}&smart=false',
+                    );
+                  },
                   leading: Container(
                     width: 44,
                     height: 44,

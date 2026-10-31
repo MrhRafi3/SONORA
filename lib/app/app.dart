@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_accent.dart';
 
 /// Notifier for managing active [ThemeMode]. Defaults to [ThemeMode.dark].
 class ThemeModeNotifier extends Notifier<ThemeMode> {
@@ -26,12 +27,13 @@ class SonoraApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final themeAccent = ref.watch(themeAccentProvider);
 
     return MaterialApp.router(
       title: 'SONORA',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.buildLightTheme(accent: themeAccent),
+      darkTheme: AppTheme.buildDarkTheme(accent: themeAccent),
       themeMode: themeMode,
       routerConfig: router,
     );

@@ -5,6 +5,7 @@ import '../features/equalizer/presentation/equalizer_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/library/presentation/library_screen.dart';
 import '../features/player/presentation/player_screen.dart';
+import '../features/playlists/presentation/playlist_detail_screen.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import 'app_shell.dart';
@@ -74,6 +75,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'equalizer',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const EqualizerScreen(),
+      ),
+      GoRoute(
+        path: '/playlist/:id',
+        name: 'playlist_detail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final playlistId = state.pathParameters['id'] ?? '';
+          final title = state.uri.queryParameters['name'] ?? 'Playlist';
+          final isSmart = state.uri.queryParameters['smart'] == 'true';
+          return PlaylistDetailScreen(
+            playlistId: playlistId,
+            initialTitle: title,
+            isSmart: isSmart,
+          );
+        },
       ),
     ],
   );

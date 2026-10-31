@@ -3,6 +3,7 @@ import '../../../core/database/app_database.dart';
 import '../data/drift_library_repository.dart';
 import '../domain/entities.dart';
 import '../domain/library_repository.dart';
+import '../domain/smart_playlist.dart';
 
 /// Provider for the singleton Drift SQLite database instance.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -43,12 +44,58 @@ final librarySortAscendingProvider =
       LibrarySortAscendingNotifier.new,
     );
 
+/// Active format filter on tracks list.
+class LibraryAudioFilterNotifier extends Notifier<LibraryAudioFilter> {
+  @override
+  LibraryAudioFilter build() => LibraryAudioFilter.all;
+
+  void setFilter(LibraryAudioFilter filter) => state = filter;
+}
+
+final libraryAudioFilterProvider =
+    NotifierProvider<LibraryAudioFilterNotifier, LibraryAudioFilter>(
+      LibraryAudioFilterNotifier.new,
+    );
+
 /// Reactive stream of tracks matching the active sorting.
 final tracksStreamProvider = StreamProvider<List<AudioTrack>>((ref) {
   final repo = ref.watch(musicLibraryRepositoryProvider);
   final sortBy = ref.watch(librarySortProvider);
   final ascending = ref.watch(librarySortAscendingProvider);
   return repo.watchTracks(sortBy: sortBy, ascending: ascending);
+});
+
+/// Filtered tracks provider combining sort + format filter.
+final filteredTracksProvider = Provider<List<AudioTrack>>((ref) {
+  final tracksAsync = ref.watch(tracksStreamProvider);
+  final tracks = tracksAsync.asData?.value ?? [];
+  final filter = ref.watch(libraryAudioFilterProvider);
+
+  if (filter == LibraryAudioFilter.all) return tracks;
+  return tracks.where(filter.matches).toList();
+});
+
+/// Smart playlist tracks provider.
+final smartPlaylistTracksProvider =
+    Provider.family<List<AudioTrack>, SmartPlaylistType>((ref, type) {
+      final tracksAsync = ref.watch(tracksStreamProvider);
+      final tracks = tracksAsync.asData?.value ?? [];
+      return type.filter(tracks);
+    });
+
+/// Reactive stream of tracks for a specific custom playlist.
+final playlistTracksStreamProvider =
+    StreamProvider.family<List<AudioTrack>, String>((ref, playlistId) {
+      final repo = ref.watch(musicLibraryRepositoryProvider);
+      return repo.watchTracksForPlaylist(playlistId);
+    });
+
+/// Stream of recently added tracks.
+final recentlyAddedTracksStreamProvider = StreamProvider<List<AudioTrack>>((
+  ref,
+) {
+  final repo = ref.watch(musicLibraryRepositoryProvider);
+  return repo.watchRecentlyAddedTracks(limit: 20);
 });
 
 /// Albums derived from real indexed tracks.

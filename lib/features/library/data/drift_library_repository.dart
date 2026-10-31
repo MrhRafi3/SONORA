@@ -156,6 +156,41 @@ class DriftLibraryRepository implements MusicLibraryRepository {
   }
 
   @override
+  Stream<List<AudioTrack>> watchTracksForPlaylist(String playlistId) {
+    return database
+        .watchTracksForPlaylist(playlistId)
+        .map((rows) => rows.map(_mapToEntity).toList());
+  }
+
+  @override
+  Future<void> removeTrackFromPlaylist(
+    String playlistId,
+    String trackId,
+  ) async {
+    await database.removeTrackFromPlaylist(playlistId, trackId);
+  }
+
+  @override
+  Future<void> reorderPlaylistTracks(
+    String playlistId,
+    List<String> trackIdsInOrder,
+  ) async {
+    await database.reorderPlaylistTracks(playlistId, trackIdsInOrder);
+  }
+
+  @override
+  Future<void> renamePlaylist(String playlistId, String newName) async {
+    await database.renamePlaylist(playlistId, newName);
+  }
+
+  @override
+  Stream<List<AudioTrack>> watchRecentlyAddedTracks({int limit = 20}) {
+    return database
+        .watchRecentlyAddedTracks(limit: limit)
+        .map((rows) => rows.map(_mapToEntity).toList());
+  }
+
+  @override
   Future<ScanSummary> scanAndroidMediaStore() async {
     if (!Platform.isAndroid) {
       return const ScanSummary(

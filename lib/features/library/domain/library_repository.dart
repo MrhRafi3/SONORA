@@ -31,6 +31,19 @@ abstract class MusicLibraryRepository {
 
   Future<List<AudioTrack>> getTracksForPlaylist(String playlistId);
 
+  Stream<List<AudioTrack>> watchTracksForPlaylist(String playlistId);
+
+  Future<void> removeTrackFromPlaylist(String playlistId, String trackId);
+
+  Future<void> reorderPlaylistTracks(
+    String playlistId,
+    List<String> trackIdsInOrder,
+  );
+
+  Future<void> renamePlaylist(String playlistId, String newName);
+
+  Stream<List<AudioTrack>> watchRecentlyAddedTracks({int limit = 20});
+
   Future<ScanSummary> scanAndroidMediaStore();
 
   Future<ScanSummary> importIosAudioFiles();

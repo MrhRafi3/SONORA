@@ -6,6 +6,7 @@ import '../../../app/app.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/theme_accent.dart';
 import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/settings_tile.dart';
@@ -115,7 +116,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final currentThemeMode = ref.watch(themeModeProvider);
+    final currentAccent = ref.watch(themeAccentProvider);
     final stats = ref.watch(libraryStatsProvider);
     final isScanning = ref.watch(scanStatusProvider).isScanning;
 
@@ -156,6 +159,84 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       .read(themeModeProvider.notifier)
                       .setThemeMode(newSelection.first);
                 },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Audiophile Accent',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        currentAccent.name,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: currentAccent.accentColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: ThemeAccent.values.map((accent) {
+                      final isSelected = currentAccent == accent;
+                      return GestureDetector(
+                        onTap: () => ref
+                            .read(themeAccentProvider.notifier)
+                            .setAccent(accent),
+                        child: Tooltip(
+                          message: accent.name,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: accent.accentColor,
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.transparent,
+                                width: 2.5,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: accent.accentColor.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: isSelected
+                                ? const Icon(
+                                    Icons.check_rounded,
+                                    color: Colors.black,
+                                    size: 24,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: AppSpacing.md),

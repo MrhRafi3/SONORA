@@ -10,6 +10,7 @@ import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
 import '../../../shared/widgets/track_tile.dart';
+import '../../library/domain/smart_playlist.dart';
 import '../../library/presentation/library_providers.dart';
 import '../../player/domain/ui_track.dart';
 import '../../player/presentation/player_state.dart';
@@ -67,10 +68,36 @@ class HomeScreen extends ConsumerWidget {
     final hasRealMusic = realTracks.isNotEmpty;
     final displayShowcase = isShowcaseActive && !hasRealMusic;
 
+    final recentTracksAsync = ref.watch(recentlyAddedTracksStreamProvider);
+    final recentTracks = recentTracksAsync.asData?.value ?? [];
+
     // Use real tracks if available, otherwise showcase tracks if enabled, or empty
     final activeTracks = hasRealMusic
         ? realTracks.map((t) => t.toUiTrack()).toList()
         : (displayShowcase ? kShowcaseTracks : <UiTrack>[]);
+
+    final carouselTracks = hasRealMusic && recentTracks.isNotEmpty
+        ? recentTracks.map((t) => t.toUiTrack()).toList()
+        : activeTracks;
+
+    final favTracks = ref.watch(
+      smartPlaylistTracksProvider(SmartPlaylistType.favorites),
+    );
+    final hiResTracks = ref.watch(
+      smartPlaylistTracksProvider(SmartPlaylistType.hiResMasters),
+    );
+
+    final hour = DateTime.now().hour;
+    final String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = 'Morning Listening';
+    } else if (hour >= 12 && hour < 17) {
+      greeting = 'Afternoon Fidelity';
+    } else if (hour >= 17 && hour < 22) {
+      greeting = 'Evening Session';
+    } else {
+      greeting = 'Late Night Vinyl';
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -162,7 +189,7 @@ class HomeScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   hasRealMusic
-                                      ? 'Offline Library'
+                                      ? greeting
                                       : 'Master-Quality Audio',
                                   style: theme.textTheme.headlineMedium
                                       ?.copyWith(
@@ -312,7 +339,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
 
                   // Section: Recently Added / Played Carousel
-                  if (activeTracks.isNotEmpty) ...[
+                  if (carouselTracks.isNotEmpty) ...[
                     const SliverToBoxAdapter(
                       child: SizedBox(height: AppSpacing.sm),
                     ),
@@ -336,18 +363,18 @@ class HomeScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
                           ),
-                          itemCount: activeTracks.length,
+                          itemCount: carouselTracks.length,
                           separatorBuilder: (context, index) =>
                               const SizedBox(width: AppSpacing.md),
                           itemBuilder: (context, index) {
-                            final track = activeTracks[index];
+                            final track = carouselTracks[index];
                             final isCurrentlyActive =
                                 playerState.track?.id == track.id;
 
                             return GestureDetector(
                               onTap: () => ref
                                   .read(playerProvider.notifier)
-                                  .playTrack(track, queue: activeTracks),
+                                  .playTrack(track, queue: carouselTracks),
                               child: SizedBox(
                                 width: 124,
                                 child: Column(
@@ -395,15 +422,15 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ],
 
-                  // Section: Curated Playlists
+                  // Section: Curated Playlists / Smart Collections
                   const SliverToBoxAdapter(
                     child: SizedBox(height: AppSpacing.sm),
                   ),
                   SliverToBoxAdapter(
                     child: SectionHeader(
                       title: 'Curated Playlists',
-                      subtitle: 'Lossless collections',
-                      actionLabel: 'New',
+                      subtitle: 'Lossless & smart collections',
+                      actionLabel: 'See All',
                       onAction: () => context.go('/library'),
                     ),
                   ),
@@ -416,39 +443,26 @@ class HomeScreen extends ConsumerWidget {
                         children: [
                           Expanded(
                             child: _PlaylistCard(
-                              title: 'Late Night Vinyl',
-                              countText: 'Lossless Collection',
-                              accentColor: const Color(0xFFE59866),
-                              icon: Icons.graphic_eq_rounded,
-                              onTap: () {
-                                if (activeTracks.isNotEmpty) {
-                                  ref
-                                      .read(playerProvider.notifier)
-                                      .playTrack(
-                                        activeTracks.first,
-                                        queue: activeTracks,
-                                      );
-                                }
-                              },
+                              title: 'Favorites',
+                              countText: '${favTracks.length} starred tracks',
+                              accentColor: const Color(0xFFE07A5F),
+                              icon: Icons.favorite_rounded,
+                              onTap: () => context.push(
+                                '/playlist/${SmartPlaylistType.favorites.id}?name=Favorites&smart=true',
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: _PlaylistCard(
-                              title: 'High-Res Studio Masters',
-                              countText: 'Direct DSD / FLAC',
+                              title: 'Hi-Res Masters',
+                              countText:
+                                  '${hiResTracks.length} lossless tracks',
                               accentColor: const Color(0xFFE5C07B),
                               icon: Icons.album_rounded,
-                              onTap: () {
-                                if (activeTracks.isNotEmpty) {
-                                  ref
-                                      .read(playerProvider.notifier)
-                                      .playTrack(
-                                        activeTracks.last,
-                                        queue: activeTracks,
-                                      );
-                                }
-                              },
+                              onTap: () => context.push(
+                                '/playlist/${SmartPlaylistType.hiResMasters.id}?name=Hi-Res%20Studio%20Masters&smart=true',
+                              ),
                             ),
                           ),
                         ],

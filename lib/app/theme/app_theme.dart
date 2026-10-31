@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
+import 'theme_accent.dart';
 
 /// Extension for accessing SONORA specific audiophile theme tokens.
 @immutable
@@ -113,18 +114,35 @@ extension SonoraThemeContext on BuildContext {
 /// Reusable Theme configuration for SONORA.
 abstract final class AppTheme {
   /// Default Dark Theme: Audiophile deep charcoal with warm amber accents.
-  static ThemeData get darkTheme {
+  static ThemeData get darkTheme => buildDarkTheme();
+
+  /// Builds custom dark theme using the selected [ThemeAccent].
+  static ThemeData buildDarkTheme({
+    ThemeAccent accent = ThemeAccent.amberWarmth,
+  }) {
     final textTheme = AppTypography.createDarkTextTheme();
+
+    final extension = SonoraThemeExtension(
+      surfaceElevated: AppColors.darkSurfaceElevated,
+      surfaceOverlay: AppColors.darkSurfaceOverlay,
+      accentGlow: accent.accentGlow,
+      accentGold: accent.accentGold,
+      backgroundGradient: AppColors.darkBackgroundGradient,
+      cardGradient: AppColors.darkCardGradient,
+      accentGradient: LinearGradient(
+        colors: [accent.accentLight, accent.accentColor],
+      ),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.darkBackground,
-      colorScheme: const ColorScheme(
+      colorScheme: ColorScheme(
         brightness: Brightness.dark,
-        primary: AppColors.darkAccent,
+        primary: accent.accentColor,
         onPrimary: Colors.black,
-        secondary: AppColors.darkAccentGold,
+        secondary: accent.accentGold,
         onSecondary: Colors.black,
         error: AppColors.darkError,
         onError: Colors.white,
@@ -134,7 +152,7 @@ abstract final class AppTheme {
         outlineVariant: AppColors.darkBorderHighlight,
       ),
       textTheme: textTheme,
-      extensions: const [SonoraThemeExtension.dark],
+      extensions: [extension],
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -164,16 +182,16 @@ abstract final class AppTheme {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.darkAccent);
+            return IconThemeData(color: accent.accentColor);
           }
           return const IconThemeData(color: AppColors.darkTextTertiary);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(
+            return TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.darkAccent,
+              color: accent.accentColor,
             );
           }
           return const TextStyle(
@@ -187,14 +205,14 @@ abstract final class AppTheme {
         backgroundColor: AppColors.darkSurfaceElevated,
         indicatorColor: AppColors.darkSurfaceOverlay,
         elevation: 0,
-        selectedIconTheme: const IconThemeData(color: AppColors.darkAccent),
+        selectedIconTheme: IconThemeData(color: accent.accentColor),
         unselectedIconTheme: const IconThemeData(
           color: AppColors.darkTextTertiary,
         ),
-        selectedLabelTextStyle: const TextStyle(
+        selectedLabelTextStyle: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppColors.darkAccent,
+          color: accent.accentColor,
         ),
         unselectedLabelTextStyle: const TextStyle(
           fontSize: 12,
@@ -206,13 +224,13 @@ abstract final class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColors.darkAccent.withValues(alpha: 0.18);
+              return accent.accentColor.withValues(alpha: 0.18);
             }
             return AppColors.darkSurfaceElevated;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColors.darkAccent;
+              return accent.accentColor;
             }
             return AppColors.darkTextSecondary;
           }),
@@ -238,10 +256,10 @@ abstract final class AppTheme {
         ),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.darkAccent,
+        activeTrackColor: accent.accentColor,
         inactiveTrackColor: AppColors.darkSurfaceOverlay,
-        thumbColor: AppColors.darkAccent,
-        overlayColor: AppColors.darkAccentGlow,
+        thumbColor: accent.accentColor,
+        overlayColor: accent.accentGlow,
         trackHeight: 3,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
@@ -255,18 +273,43 @@ abstract final class AppTheme {
   }
 
   /// Light Theme: Minimalist warm companion theme.
-  static ThemeData get lightTheme {
+  static ThemeData get lightTheme => buildLightTheme();
+
+  /// Builds custom light theme using the selected [ThemeAccent].
+  static ThemeData buildLightTheme({
+    ThemeAccent accent = ThemeAccent.amberWarmth,
+  }) {
     final textTheme = AppTypography.createLightTextTheme();
+    final isDefault = accent == ThemeAccent.amberWarmth;
+    final primaryColor = isDefault ? AppColors.lightAccent : accent.accentColor;
+    final glowColor = isDefault ? AppColors.lightAccentGlow : accent.accentGlow;
+    final goldColor = isDefault ? AppColors.lightAccentGold : accent.accentGold;
+
+    final extension = SonoraThemeExtension(
+      surfaceElevated: AppColors.lightSurfaceElevated,
+      surfaceOverlay: AppColors.lightSurfaceOverlay,
+      accentGlow: glowColor,
+      accentGold: goldColor,
+      backgroundGradient: const LinearGradient(
+        colors: [AppColors.lightBackground, AppColors.lightSurfaceElevated],
+      ),
+      cardGradient: const LinearGradient(
+        colors: [AppColors.lightSurface, AppColors.lightSurfaceElevated],
+      ),
+      accentGradient: LinearGradient(
+        colors: [accent.accentLight, primaryColor],
+      ),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.lightBackground,
-      colorScheme: const ColorScheme(
+      colorScheme: ColorScheme(
         brightness: Brightness.light,
-        primary: AppColors.lightAccent,
+        primary: primaryColor,
         onPrimary: Colors.white,
-        secondary: AppColors.lightAccentGold,
+        secondary: goldColor,
         onSecondary: Colors.black,
         error: AppColors.lightError,
         onError: Colors.white,
@@ -276,7 +319,7 @@ abstract final class AppTheme {
         outlineVariant: AppColors.lightBorderHighlight,
       ),
       textTheme: textTheme,
-      extensions: const [SonoraThemeExtension.light],
+      extensions: [extension],
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -306,16 +349,16 @@ abstract final class AppTheme {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: AppColors.lightAccent);
+            return IconThemeData(color: primaryColor);
           }
           return const IconThemeData(color: AppColors.lightTextTertiary);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(
+            return TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppColors.lightAccent,
+              color: primaryColor,
             );
           }
           return const TextStyle(
@@ -329,14 +372,14 @@ abstract final class AppTheme {
         backgroundColor: AppColors.lightSurfaceElevated,
         indicatorColor: AppColors.lightSurfaceOverlay,
         elevation: 0,
-        selectedIconTheme: const IconThemeData(color: AppColors.lightAccent),
+        selectedIconTheme: IconThemeData(color: primaryColor),
         unselectedIconTheme: const IconThemeData(
           color: AppColors.lightTextTertiary,
         ),
-        selectedLabelTextStyle: const TextStyle(
+        selectedLabelTextStyle: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppColors.lightAccent,
+          color: primaryColor,
         ),
         unselectedLabelTextStyle: const TextStyle(
           fontSize: 12,
@@ -348,13 +391,13 @@ abstract final class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColors.lightAccent.withValues(alpha: 0.15);
+              return primaryColor.withValues(alpha: 0.15);
             }
             return AppColors.lightSurfaceElevated;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return AppColors.lightAccent;
+              return primaryColor;
             }
             return AppColors.lightTextSecondary;
           }),
@@ -380,10 +423,10 @@ abstract final class AppTheme {
         ),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.lightAccent,
+        activeTrackColor: primaryColor,
         inactiveTrackColor: AppColors.lightSurfaceOverlay,
-        thumbColor: AppColors.lightAccent,
-        overlayColor: AppColors.lightAccentGlow,
+        thumbColor: primaryColor,
+        overlayColor: glowColor,
         trackHeight: 3,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),

@@ -193,4 +193,61 @@ class AppDatabase extends _$AppDatabase {
 
     return query.map((row) => row.readTable(tracks)).get();
   }
+
+  Stream<List<Track>> watchTracksForPlaylist(String playlistId) {
+    final query =
+        select(tracks).join([
+            innerJoin(
+              playlistTracks,
+              playlistTracks.trackId.equalsExp(tracks.id),
+            ),
+          ])
+          ..where(playlistTracks.playlistId.equals(playlistId))
+          ..orderBy([OrderingTerm.asc(playlistTracks.sortOrder)]);
+
+    return query.map((row) => row.readTable(tracks)).watch();
+  }
+
+  Future<int> removeTrackFromPlaylist(String playlistId, String trackId) {
+    return (delete(playlistTracks)..where(
+          (pt) => pt.playlistId.equals(playlistId) & pt.trackId.equals(trackId),
+        ))
+        .go();
+  }
+
+  Future<void> reorderPlaylistTracks(
+    String playlistId,
+    List<String> trackIdsInOrder,
+  ) async {
+    await transaction(() async {
+      for (var i = 0; i < trackIdsInOrder.length; i++) {
+        await (update(playlistTracks)..where(
+              (pt) =>
+                  pt.playlistId.equals(playlistId) &
+                  pt.trackId.equals(trackIdsInOrder[i]),
+            ))
+            .write(PlaylistTracksCompanion(sortOrder: Value(i)));
+      }
+      await (update(playlists)..where((p) => p.id.equals(playlistId))).write(
+        PlaylistsCompanion(updatedAt: Value(DateTime.now())),
+      );
+    });
+  }
+
+  Future<int> renamePlaylist(String playlistId, String newName) {
+    return (update(playlists)..where((p) => p.id.equals(playlistId))).write(
+      PlaylistsCompanion(
+        name: Value(newName),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Stream<List<Track>> watchRecentlyAddedTracks({int limit = 20}) {
+    return (select(tracks)
+          ..where((tbl) => tbl.isAvailable.equals(true))
+          ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)])
+          ..limit(limit))
+        .watch();
+  }
 }
