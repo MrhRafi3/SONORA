@@ -10,6 +10,9 @@ import '../../../shared/widgets/sonora_artwork.dart';
 import '../../../shared/widgets/track_tile.dart';
 import '../domain/ui_track.dart';
 import 'player_state.dart';
+import 'widgets/audio_inspector_sheet.dart';
+import 'widgets/lyrics_sheet.dart';
+import 'widgets/waveform_progress_bar.dart';
 
 class PlayerScreen extends ConsumerWidget {
   const PlayerScreen({super.key});
@@ -86,69 +89,23 @@ class PlayerScreen extends ConsumerWidget {
   void _showLyricsSheet(BuildContext context, UiTrack track) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: context.sonoraTheme.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppSpacing.cornerLg),
       ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Lyrics & Track Notes',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  track.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  track.artist,
-                  style: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  padding: AppSpacing.insetsMd,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    borderRadius: AppSpacing.roundedMd,
-                  ),
-                  child: const Text(
-                    '[Instrumental Master Recording]\n\n'
-                    'Captured using dual Blumlein ribbon microphones with direct-to-analogue magnetic tape transfer. '
-                    'Synchronized LRC lyrics will automatically display here for vocal tracks in future phases.',
-                    style: TextStyle(fontStyle: FontStyle.italic, height: 1.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (context) => LyricsSheet(track: track),
+    );
+  }
+
+  void _showInspectorSheet(BuildContext context, UiTrack track) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: context.sonoraTheme.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: AppSpacing.cornerLg),
+      ),
+      builder: (context) => AudioInspectorSheet(track: track),
     );
   }
 
@@ -163,11 +120,10 @@ class PlayerScreen extends ConsumerWidget {
     final screenHeight = mediaQuery.size.height;
     final screenWidth = mediaQuery.size.width;
 
-    // Responsive artwork sizing avoiding overflow on small screens
-    final artworkSize = (screenWidth * 0.72).clamp(
-      200.0,
-      screenHeight > 700 ? 300.0 : 220.0,
-    );
+    // Responsive artwork sizing avoiding overflow on constrained/compact screens
+    final artworkSize = screenHeight > 700
+        ? (screenWidth * 0.72).clamp(200.0, 300.0)
+        : (screenHeight * 0.32).clamp(140.0, 200.0);
 
     return Scaffold(
       body: Container(
@@ -230,15 +186,8 @@ class PlayerScreen extends ConsumerWidget {
                             IconButton(
                               icon: const Icon(Icons.more_horiz_rounded),
                               tooltip: 'Track Info',
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Format: ${track.audioFormat} • ${track.bitDepth} / ${track.sampleRate}',
-                                    ),
-                                  ),
-                                );
-                              },
+                              onPressed: () =>
+                                  _showInspectorSheet(context, track),
                             ),
                           ],
                         ),
@@ -307,16 +256,33 @@ class PlayerScreen extends ConsumerWidget {
                           ],
                         ),
 
-                        const SizedBox(height: AppSpacing.md),
+                        SizedBox(
+                          height: screenHeight > 700
+                              ? AppSpacing.md
+                              : AppSpacing.xs,
+                        ),
 
                         // Progress Scrubber & Labels
                         Column(
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                              ),
+                              child: WaveformProgressBar(
+                                height: screenHeight > 700 ? 32.0 : 20.0,
+                                progress: playerState.progress,
+                                duration: playerState.duration ?? Duration.zero,
+                                seed: track.id.hashCode,
+                                onSeek: (val) =>
+                                    ref.read(playerProvider.notifier).seek(val),
+                              ),
+                            ),
                             SliderTheme(
                               data: theme.sliderTheme.copyWith(
-                                trackHeight: 3.5,
+                                trackHeight: 2.5,
                                 thumbShape: const RoundSliderThumbShape(
-                                  enabledThumbRadius: 6,
+                                  enabledThumbRadius: 5,
                                 ),
                               ),
                               child: Slider(
