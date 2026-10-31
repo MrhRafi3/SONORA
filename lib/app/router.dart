@@ -14,6 +14,7 @@ import '../features/settings/presentation/subpages/library_storage_settings_scre
 import '../features/settings/presentation/subpages/notifications_settings_screen.dart';
 import '../features/settings/presentation/subpages/playback_settings_screen.dart';
 import '../features/settings/presentation/subpages/privacy_settings_screen.dart';
+import '../features/splash/presentation/splash_screen.dart';
 import 'app_shell.dart';
 import 'theme/app_motion.dart';
 
@@ -26,9 +27,19 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/splash',
     debugLogDiagnostics: false,
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => AppMotion.buildPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+          transitionType: AppTransitionType.fade,
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return AppShell(navigationShell: navigationShell);

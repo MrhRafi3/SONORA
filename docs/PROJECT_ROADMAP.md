@@ -22,8 +22,9 @@
 | **Phase 07** | Premium Audio Experience (DSP, EQ, Waveforms) | **COMPLETED** | Reactive 10-band EQ, spectrum visualizer, waveform scrubber, lyrics | `b37bc9085efb816e70371afb1244facf7555a783` |
 | **Phase 08** | Personalization & Smart Library | **COMPLETED** | Theme accents, smart playlists, reordering, audio format filter chips | `62f417f139b243f5939dad53eedd51694c018be2` |
 | **Phase 09** | Performance Optimization & Comprehensive QA | **COMPLETED** | SQLite indexes, artwork caching & LRU pruning, 93 test suite, stress testing | `931edfe868e616732670d58a4b07285b3a109437` |
-| **UI/UX Polish** | App-Wide Motion, Restructured Settings & Fixes | **COMPLETED** | AppMotion system, 6 subpages, developer credit, EQ overflow fix, 99 tests | In current commit |
-| **Phase 10** | Production Release Preparation | **POSTPONED** | Release builds, store assets, metadata, final audit (awaiting logo) | Scheduled |
+| **UI/UX Polish** | App-Wide Motion, Restructured Settings & Fixes | **COMPLETED** | AppMotion system, 6 subpages, developer credit, EQ overflow fix, 99 tests | `ac67205` |
+| **Splash Screen** | Native & Animated Flutter Splash Screen | **COMPLETED** | Native launch splash handoff, #171717 contrast, scale & resonance pulse, 103 tests | In current commit |
+| **Phase 10** | Production Release Preparation | **POSTPONED** | Release builds, store assets, metadata, final audit (awaiting Phase 10 approval) | Scheduled |
 
 ---
 
@@ -182,6 +183,37 @@
   - `flutter analyze --no-pub` clean (0 warnings or errors across root and native engine).
   - Android debug APK built in 14.4s (`build/app/outputs/flutter-apk/app-debug.apk`).
   - iOS simulator app built in 18.6s (`build/ios/iphonesimulator/Runner.app`).
+
+### Premium Animated Splash Screen Phase (Completed)
+- **Status**: Completed & Verified.
+- **Deliverables**:
+  - **Asset Integration & Verification**:
+    - Verified and registered `assets/branding/` in `pubspec.yaml`.
+    - Integrated supplied `sonora_logo.png` (1024x1024, acoustic wave geometry) without modifications, distortions, or text overlays.
+  - **Native Launch Splash (Android & iOS)**:
+    - Generated unified solid `#171717` launch background matching the exact RGB values (23, 23, 23) of the logo background using `flutter_native_splash`.
+    - Configured Android `launch_background.xml`, `styles.xml`, and Android 12+ `values-v31/styles.xml` (`windowSplashScreenBackground: #171717`, dark base theme).
+    - Configured iOS `LaunchScreen.storyboard` and `LaunchBackground.imageset` with matching solid `#171717`.
+    - Completely eliminated launch flashes (white/black glitches) and layout jumps.
+  - **Flutter Animated Splash Screen ([`SplashScreen`](file:///Users/rafi/Programing/sonora/lib/features/splash/presentation/splash_screen.dart))**:
+    - Clean solid-color `#171717` canvas providing seamless continuity from native launch.
+    - Synchronized handoff: `FlutterNativeSplash.preserve` during `main()` async initialization, cleanly dismissed via `FlutterNativeSplash.remove()` on the first drawn Flutter frame.
+    - Animation Sequence (1700ms total):
+      1. Clean solid-color background start.
+      2. Logo entrance (0–600ms): Subtle scale (0.85 -> 1.0) and opacity (0.0 -> 1.0) with `Curves.easeOutCubic`.
+      3. Acoustic resonance pulse (600–1350ms): Organic breathing pulse (1.0 -> 1.045 -> 1.0) echoing the waveform radiating arcs.
+      4. Settling (1350–1700ms): Natural rest at 1.0 scale and opacity.
+      5. Fluid fade transition directly into HomeScreen (`context.go('/')`).
+    - Guarded navigation preventing back-navigation to splash; `PopScope(canPop: false)`.
+    - Responsive sizing (`math.min(w, h) * 0.42` clamped to `[140, 220]`) tested across compact phones (320x480, 360x640), tall flagships (412x915), and tablets (800x1200).
+    - Full accessibility support: detects `MediaQuery.disableAnimations` and gracefully short-circuits after minimal pause.
+- **Verification Evidence**:
+  - 103 automated tests passed cleanly (97 root app, 6 C++ package, 100% pass rate).
+  - 4 comprehensive new tests in `test/splash_screen_test.dart`.
+  - `dart format` clean (0 files changed).
+  - `flutter analyze --no-pub` clean (0 issues across root and native engine).
+  - Android debug APK built in 22.6s (`build/app/outputs/flutter-apk/app-debug.apk`).
+  - iOS simulator app built in 49.9s (`build/ios/iphonesimulator/Runner.app`).
 
 ---
 

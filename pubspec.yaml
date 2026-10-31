@@ -49,6 +49,7 @@ dependencies:
   audio_session: ^0.2.4
   sonora_audio_engine:
     path: packages/sonora_audio_engine
+  flutter_native_splash: ^2.4.8
 
 dev_dependencies:
   flutter_test:
@@ -62,9 +63,9 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.35.2
   build_runner: ^2.15.1
-
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
+flutter_native_splash:
+  color: "#171717"
+  color_dark: "#171717"
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -77,6 +78,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/branding/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
