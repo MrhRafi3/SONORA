@@ -15,7 +15,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  sonora_audio_engine: 0cf4ca20eea231b351559fa6542a944f47328ba2
+  sonora_audio_engine: f320c886fc328fde2969cd322c9ad25f495d5552
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
 

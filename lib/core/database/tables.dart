@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 @TableIndex(name: 'idx_tracks_artist', columns: {#artist})
 @TableIndex(name: 'idx_tracks_album', columns: {#album})
 @TableIndex(name: 'idx_tracks_favorite', columns: {#isFavorite})
+@TableIndex(name: 'idx_tracks_date_added', columns: {#dateAdded})
+@TableIndex(name: 'idx_tracks_duration', columns: {#durationMs})
 class Tracks extends Table {
   TextColumn get id => text()();
   TextColumn get sourceUri => text()();
@@ -47,6 +49,10 @@ class Playlists extends Table {
 }
 
 /// Junction table mapping tracks to playlists with ordering.
+@TableIndex(
+  name: 'idx_playlist_tracks_order',
+  columns: {#playlistId, #sortOrder},
+)
 class PlaylistTracks extends Table {
   TextColumn get playlistId =>
       text().references(Playlists, #id, onDelete: KeyAction.cascade)();

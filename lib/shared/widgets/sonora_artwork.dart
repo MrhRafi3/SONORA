@@ -41,12 +41,16 @@ class SonoraArtwork extends StatelessWidget {
 
         Widget content;
         if (hasRealArtwork) {
+          final targetDimension = (effectiveSize * 2.0).round().clamp(64, 1024);
           content = ClipRRect(
             borderRadius: effectiveRadius,
             child: Image.file(
               File(artworkPath!),
               width: effectiveSize,
               height: effectiveSize,
+              cacheWidth: targetDimension,
+              cacheHeight: targetDimension,
+              gaplessPlayback: true,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => _buildProceduralVinyl(effectiveSize),
             ),

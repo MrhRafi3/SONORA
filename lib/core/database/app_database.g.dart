@@ -1895,6 +1895,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_tracks_favorite',
     'CREATE INDEX idx_tracks_favorite ON tracks (is_favorite)',
   );
+  late final Index idxTracksDateAdded = Index(
+    'idx_tracks_date_added',
+    'CREATE INDEX idx_tracks_date_added ON tracks (date_added)',
+  );
+  late final Index idxTracksDuration = Index(
+    'idx_tracks_duration',
+    'CREATE INDEX idx_tracks_duration ON tracks (duration_ms)',
+  );
+  late final Index idxPlaylistTracksOrder = Index(
+    'idx_playlist_tracks_order',
+    'CREATE INDEX idx_playlist_tracks_order ON playlist_tracks (playlist_id, sort_order)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1907,6 +1919,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxTracksArtist,
     idxTracksAlbum,
     idxTracksFavorite,
+    idxTracksDateAdded,
+    idxTracksDuration,
+    idxPlaylistTracksOrder,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([

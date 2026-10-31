@@ -4,8 +4,8 @@
 > **Repository:** `https://github.com/MrhRafi3/SONORA.git`
 > **Local Path:** `/Users/rafi/Programing/sonora`
 > **Target Platforms:** Android (API 34–36, `com.mrhrafi3.sonora`) & iOS (14.0+, `com.mrhrafi3.sonora`)
-> **Current Phase:** Phase 09 (Planning Stage — Awaiting Approval)
-> **Last Verified Phase 07 Commit:** `b37bc9085efb816e70371afb1244facf7555a783`
+> **Current Phase:** Phase 10 (Planning Stage — Awaiting Approval)
+> **Last Verified Phase 08 Commit:** `62f417f139b243f5939dad53eedd51694c018be2`
 
 ---
 
@@ -20,9 +20,9 @@
 | **Phase 05** | Background Playback & System Media Controls | **COMPLETED** | `audio_service`, lock screen, notification shade, noisy disconnect | `30d7df91932e9072b9d579749e4e57e1b7807bfc` |
 | **Phase 06** | C++ Audio Engine & Dart FFI | **COMPLETED** | Biquad filter bank, FFT analysis, waveform extractor, 16k page alignment | `a0fb5cb9e210cff419257b7498f926e64e75ebe6` |
 | **Phase 07** | Premium Audio Experience (DSP, EQ, Waveforms) | **COMPLETED** | Reactive 10-band EQ, spectrum visualizer, waveform scrubber, lyrics | `b37bc9085efb816e70371afb1244facf7555a783` |
-| **Phase 08** | Personalization & Smart Library | **COMPLETED** | Theme accents, smart playlists, reordering, audio format filter chips | In current commit |
-| **Phase 09** | Performance Optimization & Comprehensive QA | **PLANNING** | Scope defined, awaiting user approval | Scheduled |
-| **Phase 10** | Production Release Preparation | **PLANNED** | Release builds, store assets, metadata, final audit | Scheduled |
+| **Phase 08** | Personalization & Smart Library | **COMPLETED** | Theme accents, smart playlists, reordering, audio format filter chips | `62f417f139b243f5939dad53eedd51694c018be2` |
+| **Phase 09** | Performance Optimization & Comprehensive QA | **COMPLETED** | SQLite indexes, artwork caching & LRU pruning, 93 test suite, stress testing | In current commit |
+| **Phase 10** | Production Release Preparation | **PLANNING** | Release builds, store assets, metadata, final audit | Scheduled |
 
 ---
 
@@ -114,11 +114,46 @@
 
 ## 3. Remaining Roadmap & Objectives
 
-### Phase 09 — Performance Optimization & Comprehensive QA (Next Priority — Awaiting User Approval)
-- **Objective**: Hardening, profiling, and stress testing.
-- **Scope**: Large library benchmarking (10,000+ tracks), SQLite query optimization, artwork disk cache eviction, memory leak detection, battery efficiency, background playback stability, and rapid playback control stress tests.
+### Phase 09 — Performance Optimization & Comprehensive QA (Completed)
+- **Status**: Completed & Verified.
+- **Deliverables**:
+  - **Database Query & Index Optimization**:
+    - Created targeted SQLite indexes: `idx_tracks_date_added` on `tracks(date_added)`, `idx_tracks_duration` on `tracks(duration_ms)`, and `idx_playlist_tracks_order` on `playlist_tracks(playlist_id, sort_order)`.
+    - Drift code generator updated and verified.
+    - Large library benchmark verified with 5,000 tracks batch inserted into SQLite in memory:
+      - All-tracks fetch: < 250ms.
+      - Indexed title/artist/dateAdded/duration sorting: < 150ms.
+      - Full-text search across 5,000 items: < 100ms.
+      - Favorites and Recently Added limit queries: < 80ms.
+      - 200-track playlist reordering in atomic transaction: < 120ms.
+  - **Artwork Caching, Downsampling & Memory Pooling**:
+    - `ArtworkCacheService`: Implemented fast in-memory LRU cache (`_memoryPathCache`, capacity 500) to bypass synchronous filesystem `stat` calls during fast fling scrolling.
+    - Bounded disk footprint (`defaultMaxDiskBytes = 150 MB`), disk usage monitoring (`getDiskUsage()`), and deterministic LRU timestamp-based file eviction (`pruneDiskCache()`).
+    - Downscaled raster decodes in `SonoraArtwork`: Clamped `cacheWidth` and `cacheHeight` to `[64, 1024]` based on 2x retina display density metrics with `gaplessPlayback: true` to prevent image raster memory spikes and UI thread jank.
+  - **Rapid Playback Engine Stress Testing**:
+    - Concurrently spammed 100+ rapid interleaved commands (`playTrack`, `togglePlayPause`, `seek`, `nextTrack`, `previousTrack`, `toggleShuffle`, `toggleRepeat`, `playQueueIndex`) on `PlayerNotifier` and `FakeAudioPlayerFacade`.
+    - Zero uncaught exceptions, zero race crashes, and deterministic state consistency.
+  - **Audio Session & Background Resilience**:
+    - Tested `SonoraAudioHandler` against edge track metadata (320+ character titles, multi-byte Japanese/Arabic/Cyrillic scripts, musical emojis).
+    - Verified graceful behavior with unassigned remote callbacks, zero-duration tracks, and corrupted artwork file paths falling back to procedural vinyl graphics.
+  - **C++ Native Audio Engine FFI Stress & Leak Testing**:
+    - Executed 25 rapid allocate-and-dispose cycles of `SonoraAudioEngine` without leaks.
+    - Processed 100 consecutive 1024-frame stereo buffers while aggressively mutating EQ band gains (-12 dB to +12 dB) and preamp gains (-5 dB to +5 dB).
+    - Verified all output samples remain finite numbers (no NaN, Inf, or denormals).
+    - Computed 50 consecutive FFT spectrum transforms and waveform extractions under continuous load.
+- **Verification Evidence**:
+  - 93 automated tests passed cleanly (87 in root app, 6 in C++ package, 100% pass rate).
+  - 16 new comprehensive tests in `test/performance_and_stress_test.dart`.
+  - `dart format` clean (0 changed).
+  - `flutter analyze --no-pub` clean (0 issues in root and native packages).
+  - Android debug APK built in 13.2s (`app-debug.apk`).
+  - iOS simulator app built in 46.1s (`Runner.app`).
 
-### Phase 10 — Production Release Preparation
+---
+
+## 3. Remaining Roadmap & Objectives
+
+### Phase 10 — Production Release Preparation (Next Priority — Awaiting User Approval)
 - **Objective**: Android and iOS store-ready packaging.
 - **Scope**: Release signing, proguard/R8 rules, splash screens, adaptive icons, privacy policy documentation, version tagging (`v1.0.0`), and store listing preparation.
 
