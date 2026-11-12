@@ -130,7 +130,7 @@ void main() {
     });
 
     test(
-      '4. Previous-track restart behavior (> 3 seconds) restarts current track',
+      '4. Single tap on previous-track recedes to previous track without unexpected restart even when > 3 seconds',
       () async {
         final notifier = container.read(playerProvider.notifier);
         await notifier.playTrack(track2, queue: [track1, track2, track3]);
@@ -144,11 +144,11 @@ void main() {
           equals(const Duration(seconds: 15)),
         );
 
-        // Previous button when > 3s must restart the track at 0:00 without changing queue index
+        // One tap on previous must recede to the previous track (t-1) directly
         await notifier.previousTrack();
         final state = container.read(playerProvider);
-        expect(state.track?.id, equals('t-2'));
-        expect(state.queueIndex, equals(1));
+        expect(state.track?.id, equals('t-1'));
+        expect(state.queueIndex, equals(0));
         expect(state.position, equals(Duration.zero));
       },
     );
@@ -347,22 +347,31 @@ void main() {
       tester,
     ) async {
       final fake = FakeAudioPlayerFacade();
+      late WidgetRef capturedRef;
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [audioPlayerFacadeProvider.overrideWithValue(fake)],
-          child: const MaterialApp(
-            home: Scaffold(
-              body: Column(
-                children: [
-                  Expanded(child: PlayerScreen()),
-                  MiniPlayer(),
-                ],
-              ),
+          child: MaterialApp(
+            home: Consumer(
+              builder: (context, ref, _) {
+                capturedRef = ref;
+                return const Scaffold(
+                  body: Column(
+                    children: [
+                      Expanded(child: PlayerScreen()),
+                      MiniPlayer(),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),
       );
+      await capturedRef
+          .read(playerProvider.notifier)
+          .playTrack(kShowcaseTracks[0], queue: kShowcaseTracks);
       await tester.pumpAndSettle();
 
       // MiniPlayer renders currently loaded track

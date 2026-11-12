@@ -271,27 +271,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
           ],
         ),
       ),
-      body: activeUiTracks.isEmpty
-          ? EmptyStateView(
-              title: 'No Audio Files Found',
-              message:
-                  'No tracks have been imported. Scan your device storage or import audio files to begin listening in bit-perfect fidelity.',
-              icon: Icons.library_music_outlined,
-              actionLabel: Platform.isAndroid
-                  ? 'Scan Device Storage'
-                  : 'Import Audio Files',
-              onAction: _handleScanImport,
-              secondaryActionLabel: isShowcaseActive
-                  ? 'Hide Sample Music'
-                  : 'Show Sample Music',
-              onSecondaryAction: () =>
-                  ref.read(libraryEmptyStateProvider.notifier).toggle(),
-            )
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                // 1. Songs Tab with Format Filter Chips
-                Column(
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // 1. Songs Tab with Format Filter Chips
+          activeUiTracks.isEmpty
+              ? EmptyStateView(
+                  title: 'No Audio Files Found',
+                  message:
+                      'No tracks have been imported. Scan your device storage or import audio files to begin listening in bit-perfect fidelity.',
+                  icon: Icons.library_music_outlined,
+                  actionLabel: Platform.isAndroid
+                      ? 'Scan Device Storage'
+                      : 'Import Audio Files',
+                  onAction: _handleScanImport,
+                  secondaryActionLabel: isShowcaseActive
+                      ? 'Hide Sample Music'
+                      : 'Show Sample Music',
+                  onSecondaryAction: () =>
+                      ref.read(libraryEmptyStateProvider.notifier).toggle(),
+                )
+              : Column(
                   children: [
                     if (hasRealMusic)
                       SingleChildScrollView(
@@ -377,22 +377,22 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                   ],
                 ),
 
-                // 2. Albums Tab
-                _AlbumsView(
-                  hasRealMusic: hasRealMusic,
-                  showcaseTracks: activeUiTracks,
-                ),
+          // 2. Albums Tab
+          _AlbumsView(
+            hasRealMusic: hasRealMusic,
+            showcaseTracks: activeUiTracks,
+          ),
 
-                // 3. Artists Tab
-                _ArtistsView(
-                  hasRealMusic: hasRealMusic,
-                  showcaseTracks: activeUiTracks,
-                ),
+          // 3. Artists Tab
+          _ArtistsView(
+            hasRealMusic: hasRealMusic,
+            showcaseTracks: activeUiTracks,
+          ),
 
-                // 4. Playlists Tab
-                _PlaylistsView(onCreatePlaylist: _showCreatePlaylistDialog),
-              ],
-            ),
+          // 4. Playlists Tab
+          _PlaylistsView(onCreatePlaylist: _showCreatePlaylistDialog),
+        ],
+      ),
     );
   }
 }

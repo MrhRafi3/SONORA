@@ -53,6 +53,16 @@ abstract class AudioPlayerFacade {
   /// Sets audio volume between 0.0 and 1.0.
   Future<void> setVolume(double volume);
 
+  /// Enables or disables the playback pipeline equalizer effect.
+  Future<void> setEqualizerEnabled(bool enabled);
+
+  /// Configures equalizer band gains and preamp in the playback pipeline.
+  Future<void> setEqualizerBands({
+    required List<double> frequencies,
+    required List<double> gains,
+    required double preampGain,
+  });
+
   /// Releases resources held by the player.
   Future<void> dispose();
 }

@@ -10,8 +10,8 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: SonoraApp()));
     await tester.pumpAndSettle();
 
-    // 1. Initial on Home
-    expect(find.text('Master-Quality Audio'), findsOneWidget);
+    // 1. Initial on Home shows genuine empty state on clean launch
+    expect(find.text('Your Music Library is Quiet'), findsOneWidget);
 
     // 2. Tap Library tab
     await tester.tap(find.text('Library'));
@@ -31,8 +31,8 @@ void main() {
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Parametric Equalizer'), findsOneWidget);
 
-    // 5. MiniPlayer remains visible across navigation
-    expect(find.text('Clair de Lune (Audiophile Re-Master)'), findsOneWidget);
+    // 5. Clean empty launch has no demo track in MiniPlayer
+    expect(find.text('Clair de Lune (Audiophile Re-Master)'), findsNothing);
 
     // Clean unmount to drain Drift stream disposal timers
     await tester.pumpWidget(const SizedBox.shrink());

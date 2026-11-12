@@ -75,5 +75,20 @@ class JustAudioPlayerFacade implements AudioPlayerFacade {
   Future<void> setVolume(double volume) => _player.setVolume(volume);
 
   @override
+  Future<void> setEqualizerEnabled(bool enabled) =>
+      _audioHandler.setEqualizerEnabled(enabled);
+
+  @override
+  Future<void> setEqualizerBands({
+    required List<double> frequencies,
+    required List<double> gains,
+    required double preampGain,
+  }) => _audioHandler.setEqualizerBands(
+    frequencies: frequencies,
+    gains: gains,
+    preampGain: preampGain,
+  );
+
+  @override
   Future<void> dispose() => _audioHandler.disposeHandler();
 }

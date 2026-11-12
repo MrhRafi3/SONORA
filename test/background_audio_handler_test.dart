@@ -104,7 +104,7 @@ void main() {
 
     test('5. Remote skipToNext delegates to registered callback', () async {
       var nextCalled = false;
-      handler.onSkipToNext = () {
+      handler.onSkipToNext = () async {
         nextCalled = true;
       };
 
@@ -114,7 +114,7 @@ void main() {
 
     test('6. Remote skipToPrevious delegates to registered callback', () async {
       var prevCalled = false;
-      handler.onSkipToPrevious = () {
+      handler.onSkipToPrevious = () async {
         prevCalled = true;
       };
 
@@ -124,7 +124,7 @@ void main() {
 
     test('7. Remote skipToQueueItem delegates with correct index', () async {
       int? requestedIndex;
-      handler.onSkipToQueueItem = (index) {
+      handler.onSkipToQueueItem = (index) async {
         requestedIndex = index;
       };
 

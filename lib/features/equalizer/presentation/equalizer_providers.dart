@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sonora_audio_engine/sonora_audio_engine.dart';
+import '../../../core/services/app_preferences_service.dart';
+import '../../player/presentation/player_state.dart';
 import '../domain/equalizer_preset.dart';
 
 /// Immutable state container for the equalizer and native DSP subsystem.
@@ -114,6 +117,12 @@ class EqualizerState {
 
 /// Riverpod Notifier managing Equalizer and native C++ engine parameters.
 class EqualizerNotifier extends Notifier<EqualizerState> {
+  static const _prefsKeyPreset = 'eq_active_preset';
+  static const _prefsKeyEnabled = 'eq_is_enabled';
+  static const _prefsKeyPreamp = 'eq_preamp_gain';
+  static const _prefsKeyBandCount = 'eq_band_count';
+  static const _prefsKeyBands = 'eq_custom_bands';
+
   SonoraAudioEngine? _nativeEngine;
 
   @override
@@ -123,9 +132,86 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
       _nativeEngine?.dispose();
       _nativeEngine = null;
     });
+
+    Future.microtask(() async {
+      await _loadPersistedSettings();
+      _syncToFacade();
+    });
+
     return EqualizerState.initial().copyWith(
       isNativeEngineConnected: _nativeEngine != null,
     );
+  }
+
+  void _syncToFacade() {
+    try {
+      final facade = ref.read(audioPlayerFacadeProvider);
+      facade.setEqualizerEnabled(state.isEnabled);
+      if (state.isEnabled) {
+        facade.setEqualizerBands(
+          frequencies: state.bands.map((b) => b.frequency).toList(),
+          gains: state.bands.map((b) => b.gain).toList(),
+          preampGain: state.preampGain,
+        );
+      }
+    } catch (_) {}
+  }
+
+  void _persistSettings() {
+    unawaited(() async {
+      try {
+        const prefs = AppPreferencesService();
+        await prefs.updateKey(_prefsKeyPreset, state.activePreset);
+        await prefs.updateKey(_prefsKeyEnabled, state.isEnabled);
+        await prefs.updateKey(_prefsKeyPreamp, state.preampGain);
+        await prefs.updateKey(_prefsKeyBandCount, state.bandCount);
+        final bandGains = state.bands.map((b) => b.gain).toList();
+        await prefs.updateKey(_prefsKeyBands, bandGains);
+      } catch (_) {}
+    }());
+  }
+
+  Future<void> _loadPersistedSettings() async {
+    try {
+      final prefs = await const AppPreferencesService().loadAll();
+      final savedPreset = prefs[_prefsKeyPreset] as String?;
+      final savedEnabled = prefs[_prefsKeyEnabled] as bool?;
+      final savedPreamp = (prefs[_prefsKeyPreamp] as num?)?.toDouble();
+      final savedBandCount = prefs[_prefsKeyBandCount] as int?;
+      final savedBandsRaw = prefs[_prefsKeyBands] as List<dynamic>?;
+
+      if (savedPreset != null ||
+          savedEnabled != null ||
+          savedPreamp != null ||
+          savedBandsRaw != null) {
+        if (savedBandCount != null &&
+            (savedBandCount == 5 || savedBandCount == 10)) {
+          setBandCount(savedBandCount);
+        }
+        if (savedPreset != null && savedPreset != 'Custom') {
+          applyPreset(savedPreset);
+        } else if (savedBandsRaw != null) {
+          final loadedGains = savedBandsRaw
+              .map((e) => (e as num).toDouble())
+              .toList();
+          final updatedBands = List.generate(state.bands.length, (i) {
+            final gain = (i < loadedGains.length) ? loadedGains[i] : 0.0;
+            try {
+              _nativeEngine?.setEqBandGain(i, gain);
+            } catch (_) {}
+            return state.bands[i].copyWith(gain: gain);
+          });
+          state = state.copyWith(bands: updatedBands, activePreset: 'Custom');
+        }
+        if (savedPreamp != null) {
+          setPreampGain(savedPreamp);
+        }
+        if (savedEnabled != null && savedEnabled != state.isEnabled) {
+          toggleEnabled();
+        }
+        _syncToFacade();
+      }
+    } catch (_) {}
   }
 
   void _initNativeEngineSafe() {
@@ -147,6 +233,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
       _nativeEngine?.isEqEnabled = next;
     } catch (_) {}
     state = state.copyWith(isEnabled: next);
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Sets active band layout (5-band graphic or 10-band ISO standard).
@@ -193,6 +281,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
     }
 
     state = state.copyWith(bandCount: count, bands: newBands);
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Sets gain in decibels (-12.0 dB to +12.0 dB) for a specific band index.
@@ -208,6 +298,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
     } catch (_) {}
 
     state = state.copyWith(bands: updatedBands, activePreset: 'Custom');
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Sets master preamp gain (-12.0 dB to +12.0 dB).
@@ -217,6 +309,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
       _nativeEngine?.preampGain = clamped;
     } catch (_) {}
     state = state.copyWith(preampGain: clamped);
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Sets sub-bass enhancement gain (0.0 dB to +10.0 dB).
@@ -259,6 +353,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
     });
 
     state = state.copyWith(activePreset: presetName, bands: updatedBands);
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Resets all bands and preamp to 0.0 dB flat.
@@ -266,6 +362,8 @@ class EqualizerNotifier extends Notifier<EqualizerState> {
     applyPreset('Flat');
     setPreampGain(0.0);
     setBassEnhancement(0.0);
+    _syncToFacade();
+    _persistSettings();
   }
 
   /// Saves current band configuration as a user custom preset.

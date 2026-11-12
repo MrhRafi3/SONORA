@@ -117,6 +117,27 @@ class FakeAudioPlayerFacade implements AudioPlayerFacade {
     _volume = volume.clamp(0.0, 1.0);
   }
 
+  bool isEqualizerEnabled = true;
+  List<double>? lastEqualizerFrequencies;
+  List<double>? lastEqualizerGains;
+  double lastPreampGain = 0.0;
+
+  @override
+  Future<void> setEqualizerEnabled(bool enabled) async {
+    isEqualizerEnabled = enabled;
+  }
+
+  @override
+  Future<void> setEqualizerBands({
+    required List<double> frequencies,
+    required List<double> gains,
+    required double preampGain,
+  }) async {
+    lastEqualizerFrequencies = List<double>.from(frequencies);
+    lastEqualizerGains = List<double>.from(gains);
+    lastPreampGain = preampGain;
+  }
+
   /// Simulation helpers for testing
   void simulatePosition(Duration pos) {
     _position = pos;

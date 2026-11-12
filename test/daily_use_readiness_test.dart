@@ -454,15 +454,24 @@ void main() {
       'PlayerScreen Queue sheet supports per-item removal and Clear button',
       (tester) async {
         final fake = FakeAudioPlayerFacade();
+        late WidgetRef capturedRef;
         await tester.pumpWidget(
           ProviderScope(
             overrides: [audioPlayerFacadeProvider.overrideWithValue(fake)],
             child: MaterialApp(
               theme: AppTheme.darkTheme,
-              home: const PlayerScreen(),
+              home: Consumer(
+                builder: (context, ref, _) {
+                  capturedRef = ref;
+                  return const PlayerScreen();
+                },
+              ),
             ),
           ),
         );
+        await capturedRef
+            .read(playerProvider.notifier)
+            .playTrack(kShowcaseTracks.first, queue: kShowcaseTracks);
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Queue'));

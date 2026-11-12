@@ -190,7 +190,27 @@ class PlayerScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final sonora = context.sonoraTheme;
     final playerState = ref.watch(playerProvider);
-    final track = playerState.track ?? kShowcaseTracks.first;
+    if (playerState.track == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 30),
+            onPressed: () => context.pop(),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Text(
+            'No track selected',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ),
+      );
+    }
+    final track = playerState.track!;
 
     final mediaQuery = MediaQuery.of(context);
     final screenHeight = mediaQuery.size.height;

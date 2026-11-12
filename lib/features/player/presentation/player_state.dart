@@ -257,7 +257,11 @@ class PlayerNotifier extends Notifier<PlayerState> {
     if (handler != null) {
       handler.onSkipToNext = () => nextTrack();
       handler.onSkipToPrevious = () => previousTrack();
-      handler.onSkipToQueueItem = (idx) => playQueueIndex(idx);
+      handler.onSkipToQueueItem = (idx) async {
+        if (state.queueIndex != idx) {
+          await playQueueIndex(idx);
+        }
+      };
       handler.onSetRepeatMode = (mode) {
         final repeat = switch (mode) {
           AudioServiceRepeatMode.none => PlaybackRepeatMode.off,
@@ -293,27 +297,27 @@ class PlayerNotifier extends Notifier<PlayerState> {
       subCompleted.cancel();
     });
 
-    return PlayerState(
-      track: kShowcaseTracks.first,
-      queue: List.unmodifiable(kShowcaseTracks),
-      originalQueue: List.unmodifiable(kShowcaseTracks),
+    return const PlayerState(
+      track: null,
+      queue: [],
+      originalQueue: [],
       queueIndex: 0,
-      duration: kShowcaseTracks.first.duration,
+      duration: Duration.zero,
     );
   }
 
-  /// Replaces the unplayed initial showcase placeholder with real indexed library
+  /// Replaces the unplayed initial showcase placeholder or unset state with real indexed library
   /// tracks so daily-use playback never lingers on sample tracks.
   void syncRealLibrary(List<UiTrack> realTracks) {
     if (realTracks.isEmpty) return;
     final current = state.track;
-    final isShowcasePlaceholder =
-        current != null &&
-        current.sourceUri == null &&
-        current.filePath == null &&
-        kShowcaseTracks.any((s) => s.id == current.id);
+    final isUnsetOrPlaceholder =
+        current == null ||
+        (current.sourceUri == null &&
+            current.filePath == null &&
+            kShowcaseTracks.any((s) => s.id == current.id));
 
-    if (!isShowcasePlaceholder || state.isPlaying || _loadedTrackId != null) {
+    if (!isUnsetOrPlaceholder || state.isPlaying || _loadedTrackId != null) {
       return;
     }
 
@@ -729,7 +733,13 @@ class PlayerNotifier extends Notifier<PlayerState> {
     final activeQueue = state.queue.isNotEmpty ? state.queue : kShowcaseTracks;
     if (activeQueue.isEmpty) return;
 
-    var nextIndex = state.queueIndex + 1;
+    int currentIndex = state.queueIndex;
+    if (state.track != null) {
+      final actualIdx = activeQueue.indexWhere((t) => t.id == state.track!.id);
+      if (actualIdx != -1) currentIndex = actualIdx;
+    }
+
+    var nextIndex = currentIndex + 1;
     if (nextIndex >= activeQueue.length) {
       if (state.repeatMode == PlaybackRepeatMode.all) {
         nextIndex = 0;
@@ -745,27 +755,37 @@ class PlayerNotifier extends Notifier<PlayerState> {
       }
     }
 
+    if (state.queue.isEmpty) {
+      state = state.copyWith(
+        queue: List.unmodifiable(activeQueue),
+        originalQueue: List.unmodifiable(activeQueue),
+      );
+    }
+
     await playQueueIndex(nextIndex);
   }
 
-  /// Goes to the previous track, or restarts current track if played > 3 seconds.
+  /// Navigates to the previous track in the active queue without unexpected song restarts.
   Future<void> previousTrack() async {
-    if (state.position > const Duration(seconds: 3)) {
-      await _facade.seek(Duration.zero);
-      state = state.copyWith(position: Duration.zero);
-      return;
-    }
-
     final activeQueue = state.queue.isNotEmpty ? state.queue : kShowcaseTracks;
     if (activeQueue.isEmpty) return;
 
-    var prevIndex = state.queueIndex - 1;
+    int currentIndex = state.queueIndex;
+    if (state.track != null) {
+      final actualIdx = activeQueue.indexWhere((t) => t.id == state.track!.id);
+      if (actualIdx != -1) currentIndex = actualIdx;
+    }
+
+    var prevIndex = currentIndex - 1;
     if (prevIndex < 0) {
-      if (state.repeatMode == PlaybackRepeatMode.all) {
-        prevIndex = activeQueue.length - 1;
-      } else {
-        prevIndex = 0;
-      }
+      prevIndex = activeQueue.length - 1;
+    }
+
+    if (state.queue.isEmpty) {
+      state = state.copyWith(
+        queue: List.unmodifiable(activeQueue),
+        originalQueue: List.unmodifiable(activeQueue),
+      );
     }
 
     await playQueueIndex(prevIndex);
@@ -803,7 +823,7 @@ final playerProvider = NotifierProvider<PlayerNotifier, PlayerState>(
 /// Provider to toggle between populated showcase UI and empty library state for testing.
 class LibraryEmptyStateNotifier extends Notifier<bool> {
   @override
-  bool build() => true;
+  bool build() => false;
 
   void toggle() => state = !state;
 }

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart';
@@ -10,15 +12,55 @@ import '../domain/ui_track.dart';
 /// & iOS MPRemoteCommandCenter / MPNowPlayingInfoCenter).
 class SonoraAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
-  SonoraAudioHandler({ja.AudioPlayer? player})
-    : _player = player ?? ja.AudioPlayer(handleInterruptions: false) {
+  SonoraAudioHandler({
+    ja.AudioPlayer? player,
+    ja.AndroidEqualizer? equalizer,
+    ja.AndroidLoudnessEnhancer? loudnessEnhancer,
+  }) : this._internal(
+         equalizer ??
+             (defaultTargetPlatform == TargetPlatform.android &&
+                     !kIsWeb &&
+                     !Platform.environment.containsKey('FLUTTER_TEST')
+                 ? ja.AndroidEqualizer()
+                 : null),
+         loudnessEnhancer ??
+             (defaultTargetPlatform == TargetPlatform.android &&
+                     !kIsWeb &&
+                     !Platform.environment.containsKey('FLUTTER_TEST')
+                 ? ja.AndroidLoudnessEnhancer()
+                 : null),
+         player,
+       );
+
+  SonoraAudioHandler._internal(
+    this._equalizer,
+    this._loudnessEnhancer,
+    ja.AudioPlayer? player,
+  ) : _player =
+          player ??
+          ja.AudioPlayer(
+            handleInterruptions: false,
+            audioPipeline: (_equalizer != null || _loudnessEnhancer != null)
+                ? ja.AudioPipeline(
+                    androidAudioEffects: [?_loudnessEnhancer, ?_equalizer],
+                  )
+                : null,
+          ) {
     _initStreams();
   }
 
   final ja.AudioPlayer _player;
+  final ja.AndroidEqualizer? _equalizer;
+  final ja.AndroidLoudnessEnhancer? _loudnessEnhancer;
 
   /// Direct accessor for the shared production player instance.
   ja.AudioPlayer get player => _player;
+
+  /// Optional accessor for the AndroidEqualizer audio effect.
+  ja.AndroidEqualizer? get equalizer => _equalizer;
+
+  /// Optional accessor for the AndroidLoudnessEnhancer audio effect.
+  ja.AndroidLoudnessEnhancer? get loudnessEnhancer => _loudnessEnhancer;
 
   StreamSubscription<ja.PlaybackEvent>? _playbackEventSubscription;
   StreamSubscription<Duration?>? _durationSubscription;
@@ -35,9 +77,9 @@ class SonoraAudioHandler extends BaseAudioHandler
 
   /// External delegation callbacks to harmonize system remote events with
   /// Riverpod PlayerNotifier state.
-  VoidCallback? onSkipToNext;
-  VoidCallback? onSkipToPrevious;
-  ValueChanged<int>? onSkipToQueueItem;
+  Future<void> Function()? onSkipToNext;
+  Future<void> Function()? onSkipToPrevious;
+  Future<void> Function(int index)? onSkipToQueueItem;
   ValueChanged<AudioServiceRepeatMode>? onSetRepeatMode;
   ValueChanged<AudioServiceShuffleMode>? onSetShuffleMode;
 
@@ -226,6 +268,8 @@ class SonoraAudioHandler extends BaseAudioHandler
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
+          MediaAction.skipToNext,
+          MediaAction.skipToPrevious,
           MediaAction.setRepeatMode,
           MediaAction.setShuffleMode,
         },
@@ -279,22 +323,83 @@ class SonoraAudioHandler extends BaseAudioHandler
   @override
   Future<void> skipToNext() async {
     if (onSkipToNext != null) {
-      onSkipToNext!();
+      await onSkipToNext!();
     }
   }
 
   @override
   Future<void> skipToPrevious() async {
     if (onSkipToPrevious != null) {
-      onSkipToPrevious!();
+      await onSkipToPrevious!();
     }
   }
 
   @override
   Future<void> skipToQueueItem(int index) async {
     if (onSkipToQueueItem != null) {
-      onSkipToQueueItem!(index);
+      await onSkipToQueueItem!(index);
     }
+  }
+
+  /// Sets master bypass / active state on the hardware AndroidEqualizer.
+  Future<void> setEqualizerEnabled(bool enabled) async {
+    try {
+      await _equalizer?.setEnabled(enabled);
+      await _loudnessEnhancer?.setEnabled(enabled);
+    } catch (e) {
+      debugPrint('SonoraAudioHandler setEqualizerEnabled error: $e');
+    }
+  }
+
+  /// Interpolates and applies EQ band gains and preamp gain to Android AudioEffects.
+  Future<void> setEqualizerBands({
+    required List<double> frequencies,
+    required List<double> gains,
+    required double preampGain,
+  }) async {
+    if (_equalizer == null) return;
+    try {
+      final params = await _equalizer.parameters;
+      for (final band in params.bands) {
+        final targetGain = _interpolateGainForFrequency(
+          band.centerFrequency,
+          frequencies,
+          gains,
+        );
+        final clampedGain = targetGain.clamp(
+          params.minDecibels,
+          params.maxDecibels,
+        );
+        await band.setGain(clampedGain);
+      }
+      if (_loudnessEnhancer != null) {
+        final targetDb = preampGain.clamp(0.0, 12.0);
+        await _loudnessEnhancer.setTargetGain(targetDb);
+      }
+    } catch (e) {
+      debugPrint('SonoraAudioHandler setEqualizerBands error: $e');
+    }
+  }
+
+  double _interpolateGainForFrequency(
+    double centerFreq,
+    List<double> freqs,
+    List<double> gains,
+  ) {
+    if (freqs.isEmpty || gains.isEmpty) return 0.0;
+    if (centerFreq <= freqs.first) return gains.first;
+    if (centerFreq >= freqs.last) return gains.last;
+
+    for (int i = 0; i < freqs.length - 1; i++) {
+      if (centerFreq >= freqs[i] && centerFreq <= freqs[i + 1]) {
+        final logF0 = math.log(freqs[i]);
+        final logF1 = math.log(freqs[i + 1]);
+        final logF = math.log(centerFreq);
+        final t = (logF - logF0) / (logF1 - logF0);
+        return gains[i] + t * (gains[i + 1] - gains[i]);
+      }
+    }
+    return 0.0;
   }
 
   @override

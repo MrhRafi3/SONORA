@@ -100,16 +100,20 @@ class HomeScreen extends ConsumerWidget {
                   width: 1,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.album_rounded,
-                    size: 16,
-                    color: AppColors.darkAccent,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: Image.asset(
+                      'assets/icons/logo.png',
+                      width: 16,
+                      height: 16,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  SizedBox(width: 6),
-                  Text(
+                  const SizedBox(width: 6),
+                  const Text(
                     'SONORA',
                     style: TextStyle(
                       fontSize: 13,

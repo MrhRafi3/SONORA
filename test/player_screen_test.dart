@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sonora/app/theme/app_theme.dart';
 import 'package:sonora/features/player/presentation/player_screen.dart';
+import 'package:sonora/features/player/presentation/player_state.dart';
 
 void main() {
   testWidgets(
-    'PlayerScreen renders full-screen player with controls and formats',
+    'PlayerScreen renders honest empty state when no track is selected',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -16,6 +17,32 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
+
+      expect(find.text('No track selected'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'PlayerScreen renders full-screen player with controls and formats',
+    (tester) async {
+      late WidgetRef capturedRef;
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: Consumer(
+              builder: (context, ref, _) {
+                capturedRef = ref;
+                return const PlayerScreen();
+              },
+            ),
+          ),
+        ),
+      );
+      await capturedRef
+          .read(playerProvider.notifier)
+          .playTrack(kShowcaseTracks.first, queue: kShowcaseTracks);
       await tester.pumpAndSettle();
 
       // Verify title and labels

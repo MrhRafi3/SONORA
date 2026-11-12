@@ -10,21 +10,53 @@ import '../features/player/presentation/player_state.dart';
 import '../features/settings/presentation/settings_providers.dart';
 import '../shared/widgets/mini_player.dart';
 
-/// Responsive root application shell supporting both phone and tablet/desktop layouts.
-class AppShell extends ConsumerWidget {
+/// Responsive root application shell supporting both phone and tablet/desktop layouts
+/// with reliable Android back-navigation hierarchy.
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  final List<int> _branchHistory = [0];
+
   void _onDestinationSelected(int index) {
-    navigationShell.goBranch(
+    if (index != widget.navigationShell.currentIndex) {
+      _branchHistory.remove(index);
+      _branchHistory.add(index);
+    }
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
+  void _handleBackNavigation() {
+    if (_branchHistory.isNotEmpty &&
+        _branchHistory.last == widget.navigationShell.currentIndex) {
+      _branchHistory.removeLast();
+    }
+    final targetBranch = _branchHistory.isNotEmpty ? _branchHistory.last : 0;
+    widget.navigationShell.goBranch(targetBranch);
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final current = widget.navigationShell.currentIndex;
+    if (_branchHistory.isEmpty || _branchHistory.last != current) {
+      _branchHistory.remove(current);
+      _branchHistory.add(current);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     ref.listen<String?>(playerProvider.select((s) => s.playbackError), (
       _,
       nextError,
@@ -81,14 +113,22 @@ class AppShell extends ConsumerWidget {
     final isWideScreen = screenWidth >= 720;
     final theme = Theme.of(context);
     final sonora = context.sonoraTheme;
+    final navShell = widget.navigationShell;
+
+    final canPop =
+        navShell.currentIndex == 0 &&
+        (_branchHistory.isEmpty ||
+            (_branchHistory.length == 1 && _branchHistory.first == 0));
+
+    final Widget shellLayout;
 
     if (isWideScreen) {
-      return Scaffold(
+      shellLayout = Scaffold(
         body: SafeArea(
           child: Row(
             children: [
               NavigationRail(
-                selectedIndex: navigationShell.currentIndex,
+                selectedIndex: navShell.currentIndex,
                 onDestinationSelected: _onDestinationSelected,
                 backgroundColor: sonora.surfaceElevated,
                 labelType: NavigationRailLabelType.all,
@@ -156,7 +196,7 @@ class AppShell extends ConsumerWidget {
               Expanded(
                 child: Column(
                   children: [
-                    Expanded(child: navigationShell),
+                    Expanded(child: navShell),
                     const MiniPlayer(),
                   ],
                 ),
@@ -165,42 +205,52 @@ class AppShell extends ConsumerWidget {
           ),
         ),
       );
+    } else {
+      // Phone layout with bottom navigation bar and floating/docked mini player
+      shellLayout = Scaffold(
+        body: Column(
+          children: [
+            Expanded(child: navShell),
+            const MiniPlayer(),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: navShell.currentIndex,
+          onDestinationSelected: _onDestinationSelected,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.library_music_outlined),
+              selectedIcon: Icon(Icons.library_music_rounded),
+              label: 'Library',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.search_outlined),
+              selectedIcon: Icon(Icons.search_rounded),
+              label: 'Search',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Settings',
+            ),
+          ],
+        ),
+      );
     }
 
-    // Phone layout with bottom navigation bar and floating/docked mini player
-    return Scaffold(
-      body: Column(
-        children: [
-          Expanded(child: navigationShell),
-          const MiniPlayer(),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music_rounded),
-            label: 'Library',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search_rounded),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
-      ),
+    return PopScope(
+      key: const Key('app_shell_pop_scope'),
+      canPop: canPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackNavigation();
+      },
+      child: shellLayout,
     );
   }
 }
