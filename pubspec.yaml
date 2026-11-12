@@ -47,6 +47,7 @@ dependencies:
   sonora_audio_engine:
     path: packages/sonora_audio_engine
   flutter_native_splash: ^2.4.8
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

@@ -14,6 +14,7 @@ class SonoraArtwork extends StatelessWidget {
     this.showGlow = false,
     this.heroTag,
     this.artworkPath,
+    this.isLoading = false,
   });
 
   final double size;
@@ -23,6 +24,7 @@ class SonoraArtwork extends StatelessWidget {
   final bool showGlow;
   final String? heroTag;
   final String? artworkPath;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -52,11 +54,12 @@ class SonoraArtwork extends StatelessWidget {
               cacheHeight: targetDimension,
               gaplessPlayback: true,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _buildProceduralVinyl(effectiveSize),
+              errorBuilder: (_, _, _) =>
+                  _buildProceduralVinyl(effectiveSize, isLoading: isLoading),
             ),
           );
         } else {
-          content = _buildProceduralVinyl(effectiveSize);
+          content = _buildProceduralVinyl(effectiveSize, isLoading: isLoading);
         }
 
         Widget artwork = Container(
@@ -102,7 +105,7 @@ class SonoraArtwork extends StatelessWidget {
     );
   }
 
-  Widget _buildProceduralVinyl(double size) {
+  Widget _buildProceduralVinyl(double size, {bool isLoading = false}) {
     return Container(
       width: size,
       height: size,
@@ -126,7 +129,7 @@ class SonoraArtwork extends StatelessWidget {
               accentColor: accentColor.withValues(alpha: 0.35),
             ),
           ),
-          // Center spindle / icon badge
+          // Center spindle / icon badge / loading indicator
           Container(
             width: size * 0.28,
             height: size * 0.28,
@@ -144,11 +147,22 @@ class SonoraArtwork extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              Icons.graphic_eq_rounded,
-              size: size * 0.16,
-              color: accentColor,
-            ),
+            child: isLoading
+                ? Center(
+                    child: SizedBox(
+                      width: size * 0.14,
+                      height: size * 0.14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+                      ),
+                    ),
+                  )
+                : Icon(
+                    Icons.graphic_eq_rounded,
+                    size: size * 0.16,
+                    color: accentColor,
+                  ),
           ),
         ],
       ),

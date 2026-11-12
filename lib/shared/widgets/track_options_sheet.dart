@@ -4,6 +4,7 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_theme.dart';
 import '../../features/library/presentation/library_providers.dart';
+import '../../features/metadata/presentation/widgets/artwork_selector_dialog.dart';
 import '../../features/player/domain/ui_track.dart';
 import '../../features/player/presentation/player_state.dart';
 import 'sonora_artwork.dart';
@@ -128,6 +129,30 @@ Future<void> showTrackOptionsSheet(
               onTap: () {
                 Navigator.pop(sheetContext);
                 _showPlaylistPicker(context, ref, track);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image_search_rounded),
+              title: const Text('Find Album Artwork'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                showDialog<void>(
+                  context: context,
+                  builder: (ctx) => ArtworkSelectorDialog(
+                    artist: track.artist,
+                    album: track.album,
+                    trackTitle: track.title,
+                    onArtworkApplied: (savedPath) {
+                      ref
+                          .read(playerProvider.notifier)
+                          .updateArtworkForAlbum(
+                            artist: track.artist,
+                            album: track.album,
+                            artworkPath: savedPath,
+                          );
+                    },
+                  ),
+                );
               },
             ),
             const SizedBox(height: AppSpacing.xs),

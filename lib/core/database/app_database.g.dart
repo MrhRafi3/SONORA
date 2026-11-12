@@ -1873,12 +1873,802 @@ class PlaylistTracksCompanion extends UpdateCompanion<PlaylistTrack> {
   }
 }
 
+class $TrackLyricsTable extends TrackLyrics
+    with TableInfo<$TrackLyricsTable, TrackLyric> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TrackLyricsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _trackIdMeta = const VerificationMeta(
+    'trackId',
+  );
+  @override
+  late final GeneratedColumn<String> trackId = GeneratedColumn<String>(
+    'track_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _plainLyricsMeta = const VerificationMeta(
+    'plainLyrics',
+  );
+  @override
+  late final GeneratedColumn<String> plainLyrics = GeneratedColumn<String>(
+    'plain_lyrics',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _syncedLyricsMeta = const VerificationMeta(
+    'syncedLyrics',
+  );
+  @override
+  late final GeneratedColumn<String> syncedLyrics = GeneratedColumn<String>(
+    'synced_lyrics',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('lrclib'),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    trackId,
+    plainLyrics,
+    syncedLyrics,
+    source,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'track_lyrics';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TrackLyric> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('track_id')) {
+      context.handle(
+        _trackIdMeta,
+        trackId.isAcceptableOrUnknown(data['track_id']!, _trackIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_trackIdMeta);
+    }
+    if (data.containsKey('plain_lyrics')) {
+      context.handle(
+        _plainLyricsMeta,
+        plainLyrics.isAcceptableOrUnknown(
+          data['plain_lyrics']!,
+          _plainLyricsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('synced_lyrics')) {
+      context.handle(
+        _syncedLyricsMeta,
+        syncedLyrics.isAcceptableOrUnknown(
+          data['synced_lyrics']!,
+          _syncedLyricsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {trackId};
+  @override
+  TrackLyric map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TrackLyric(
+      trackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}track_id'],
+      )!,
+      plainLyrics: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plain_lyrics'],
+      ),
+      syncedLyrics: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}synced_lyrics'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TrackLyricsTable createAlias(String alias) {
+    return $TrackLyricsTable(attachedDatabase, alias);
+  }
+}
+
+class TrackLyric extends DataClass implements Insertable<TrackLyric> {
+  final String trackId;
+  final String? plainLyrics;
+  final String? syncedLyrics;
+  final String source;
+  final DateTime updatedAt;
+  const TrackLyric({
+    required this.trackId,
+    this.plainLyrics,
+    this.syncedLyrics,
+    required this.source,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['track_id'] = Variable<String>(trackId);
+    if (!nullToAbsent || plainLyrics != null) {
+      map['plain_lyrics'] = Variable<String>(plainLyrics);
+    }
+    if (!nullToAbsent || syncedLyrics != null) {
+      map['synced_lyrics'] = Variable<String>(syncedLyrics);
+    }
+    map['source'] = Variable<String>(source);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TrackLyricsCompanion toCompanion(bool nullToAbsent) {
+    return TrackLyricsCompanion(
+      trackId: Value(trackId),
+      plainLyrics: plainLyrics == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plainLyrics),
+      syncedLyrics: syncedLyrics == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncedLyrics),
+      source: Value(source),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TrackLyric.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TrackLyric(
+      trackId: serializer.fromJson<String>(json['trackId']),
+      plainLyrics: serializer.fromJson<String?>(json['plainLyrics']),
+      syncedLyrics: serializer.fromJson<String?>(json['syncedLyrics']),
+      source: serializer.fromJson<String>(json['source']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'trackId': serializer.toJson<String>(trackId),
+      'plainLyrics': serializer.toJson<String?>(plainLyrics),
+      'syncedLyrics': serializer.toJson<String?>(syncedLyrics),
+      'source': serializer.toJson<String>(source),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TrackLyric copyWith({
+    String? trackId,
+    Value<String?> plainLyrics = const Value.absent(),
+    Value<String?> syncedLyrics = const Value.absent(),
+    String? source,
+    DateTime? updatedAt,
+  }) => TrackLyric(
+    trackId: trackId ?? this.trackId,
+    plainLyrics: plainLyrics.present ? plainLyrics.value : this.plainLyrics,
+    syncedLyrics: syncedLyrics.present ? syncedLyrics.value : this.syncedLyrics,
+    source: source ?? this.source,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TrackLyric copyWithCompanion(TrackLyricsCompanion data) {
+    return TrackLyric(
+      trackId: data.trackId.present ? data.trackId.value : this.trackId,
+      plainLyrics: data.plainLyrics.present
+          ? data.plainLyrics.value
+          : this.plainLyrics,
+      syncedLyrics: data.syncedLyrics.present
+          ? data.syncedLyrics.value
+          : this.syncedLyrics,
+      source: data.source.present ? data.source.value : this.source,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackLyric(')
+          ..write('trackId: $trackId, ')
+          ..write('plainLyrics: $plainLyrics, ')
+          ..write('syncedLyrics: $syncedLyrics, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(trackId, plainLyrics, syncedLyrics, source, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TrackLyric &&
+          other.trackId == this.trackId &&
+          other.plainLyrics == this.plainLyrics &&
+          other.syncedLyrics == this.syncedLyrics &&
+          other.source == this.source &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TrackLyricsCompanion extends UpdateCompanion<TrackLyric> {
+  final Value<String> trackId;
+  final Value<String?> plainLyrics;
+  final Value<String?> syncedLyrics;
+  final Value<String> source;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TrackLyricsCompanion({
+    this.trackId = const Value.absent(),
+    this.plainLyrics = const Value.absent(),
+    this.syncedLyrics = const Value.absent(),
+    this.source = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TrackLyricsCompanion.insert({
+    required String trackId,
+    this.plainLyrics = const Value.absent(),
+    this.syncedLyrics = const Value.absent(),
+    this.source = const Value.absent(),
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : trackId = Value(trackId),
+       updatedAt = Value(updatedAt);
+  static Insertable<TrackLyric> custom({
+    Expression<String>? trackId,
+    Expression<String>? plainLyrics,
+    Expression<String>? syncedLyrics,
+    Expression<String>? source,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (trackId != null) 'track_id': trackId,
+      if (plainLyrics != null) 'plain_lyrics': plainLyrics,
+      if (syncedLyrics != null) 'synced_lyrics': syncedLyrics,
+      if (source != null) 'source': source,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TrackLyricsCompanion copyWith({
+    Value<String>? trackId,
+    Value<String?>? plainLyrics,
+    Value<String?>? syncedLyrics,
+    Value<String>? source,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TrackLyricsCompanion(
+      trackId: trackId ?? this.trackId,
+      plainLyrics: plainLyrics ?? this.plainLyrics,
+      syncedLyrics: syncedLyrics ?? this.syncedLyrics,
+      source: source ?? this.source,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (trackId.present) {
+      map['track_id'] = Variable<String>(trackId.value);
+    }
+    if (plainLyrics.present) {
+      map['plain_lyrics'] = Variable<String>(plainLyrics.value);
+    }
+    if (syncedLyrics.present) {
+      map['synced_lyrics'] = Variable<String>(syncedLyrics.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TrackLyricsCompanion(')
+          ..write('trackId: $trackId, ')
+          ..write('plainLyrics: $plainLyrics, ')
+          ..write('syncedLyrics: $syncedLyrics, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AlbumArtworksTable extends AlbumArtworks
+    with TableInfo<$AlbumArtworksTable, AlbumArtwork> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AlbumArtworksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _albumKeyMeta = const VerificationMeta(
+    'albumKey',
+  );
+  @override
+  late final GeneratedColumn<String> albumKey = GeneratedColumn<String>(
+    'album_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _albumMeta = const VerificationMeta('album');
+  @override
+  late final GeneratedColumn<String> album = GeneratedColumn<String>(
+    'album',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _artistMeta = const VerificationMeta('artist');
+  @override
+  late final GeneratedColumn<String> artist = GeneratedColumn<String>(
+    'artist',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _artworkPathMeta = const VerificationMeta(
+    'artworkPath',
+  );
+  @override
+  late final GeneratedColumn<String> artworkPath = GeneratedColumn<String>(
+    'artwork_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('online'),
+  );
+  static const VerificationMeta _dateAddedMeta = const VerificationMeta(
+    'dateAdded',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateAdded = GeneratedColumn<DateTime>(
+    'date_added',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    albumKey,
+    album,
+    artist,
+    artworkPath,
+    source,
+    dateAdded,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'album_artworks';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AlbumArtwork> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('album_key')) {
+      context.handle(
+        _albumKeyMeta,
+        albumKey.isAcceptableOrUnknown(data['album_key']!, _albumKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_albumKeyMeta);
+    }
+    if (data.containsKey('album')) {
+      context.handle(
+        _albumMeta,
+        album.isAcceptableOrUnknown(data['album']!, _albumMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_albumMeta);
+    }
+    if (data.containsKey('artist')) {
+      context.handle(
+        _artistMeta,
+        artist.isAcceptableOrUnknown(data['artist']!, _artistMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_artistMeta);
+    }
+    if (data.containsKey('artwork_path')) {
+      context.handle(
+        _artworkPathMeta,
+        artworkPath.isAcceptableOrUnknown(
+          data['artwork_path']!,
+          _artworkPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_artworkPathMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('date_added')) {
+      context.handle(
+        _dateAddedMeta,
+        dateAdded.isAcceptableOrUnknown(data['date_added']!, _dateAddedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateAddedMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {albumKey};
+  @override
+  AlbumArtwork map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AlbumArtwork(
+      albumKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}album_key'],
+      )!,
+      album: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}album'],
+      )!,
+      artist: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}artist'],
+      )!,
+      artworkPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}artwork_path'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      dateAdded: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_added'],
+      )!,
+    );
+  }
+
+  @override
+  $AlbumArtworksTable createAlias(String alias) {
+    return $AlbumArtworksTable(attachedDatabase, alias);
+  }
+}
+
+class AlbumArtwork extends DataClass implements Insertable<AlbumArtwork> {
+  final String albumKey;
+  final String album;
+  final String artist;
+  final String artworkPath;
+  final String source;
+  final DateTime dateAdded;
+  const AlbumArtwork({
+    required this.albumKey,
+    required this.album,
+    required this.artist,
+    required this.artworkPath,
+    required this.source,
+    required this.dateAdded,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['album_key'] = Variable<String>(albumKey);
+    map['album'] = Variable<String>(album);
+    map['artist'] = Variable<String>(artist);
+    map['artwork_path'] = Variable<String>(artworkPath);
+    map['source'] = Variable<String>(source);
+    map['date_added'] = Variable<DateTime>(dateAdded);
+    return map;
+  }
+
+  AlbumArtworksCompanion toCompanion(bool nullToAbsent) {
+    return AlbumArtworksCompanion(
+      albumKey: Value(albumKey),
+      album: Value(album),
+      artist: Value(artist),
+      artworkPath: Value(artworkPath),
+      source: Value(source),
+      dateAdded: Value(dateAdded),
+    );
+  }
+
+  factory AlbumArtwork.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AlbumArtwork(
+      albumKey: serializer.fromJson<String>(json['albumKey']),
+      album: serializer.fromJson<String>(json['album']),
+      artist: serializer.fromJson<String>(json['artist']),
+      artworkPath: serializer.fromJson<String>(json['artworkPath']),
+      source: serializer.fromJson<String>(json['source']),
+      dateAdded: serializer.fromJson<DateTime>(json['dateAdded']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'albumKey': serializer.toJson<String>(albumKey),
+      'album': serializer.toJson<String>(album),
+      'artist': serializer.toJson<String>(artist),
+      'artworkPath': serializer.toJson<String>(artworkPath),
+      'source': serializer.toJson<String>(source),
+      'dateAdded': serializer.toJson<DateTime>(dateAdded),
+    };
+  }
+
+  AlbumArtwork copyWith({
+    String? albumKey,
+    String? album,
+    String? artist,
+    String? artworkPath,
+    String? source,
+    DateTime? dateAdded,
+  }) => AlbumArtwork(
+    albumKey: albumKey ?? this.albumKey,
+    album: album ?? this.album,
+    artist: artist ?? this.artist,
+    artworkPath: artworkPath ?? this.artworkPath,
+    source: source ?? this.source,
+    dateAdded: dateAdded ?? this.dateAdded,
+  );
+  AlbumArtwork copyWithCompanion(AlbumArtworksCompanion data) {
+    return AlbumArtwork(
+      albumKey: data.albumKey.present ? data.albumKey.value : this.albumKey,
+      album: data.album.present ? data.album.value : this.album,
+      artist: data.artist.present ? data.artist.value : this.artist,
+      artworkPath: data.artworkPath.present
+          ? data.artworkPath.value
+          : this.artworkPath,
+      source: data.source.present ? data.source.value : this.source,
+      dateAdded: data.dateAdded.present ? data.dateAdded.value : this.dateAdded,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AlbumArtwork(')
+          ..write('albumKey: $albumKey, ')
+          ..write('album: $album, ')
+          ..write('artist: $artist, ')
+          ..write('artworkPath: $artworkPath, ')
+          ..write('source: $source, ')
+          ..write('dateAdded: $dateAdded')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(albumKey, album, artist, artworkPath, source, dateAdded);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AlbumArtwork &&
+          other.albumKey == this.albumKey &&
+          other.album == this.album &&
+          other.artist == this.artist &&
+          other.artworkPath == this.artworkPath &&
+          other.source == this.source &&
+          other.dateAdded == this.dateAdded);
+}
+
+class AlbumArtworksCompanion extends UpdateCompanion<AlbumArtwork> {
+  final Value<String> albumKey;
+  final Value<String> album;
+  final Value<String> artist;
+  final Value<String> artworkPath;
+  final Value<String> source;
+  final Value<DateTime> dateAdded;
+  final Value<int> rowid;
+  const AlbumArtworksCompanion({
+    this.albumKey = const Value.absent(),
+    this.album = const Value.absent(),
+    this.artist = const Value.absent(),
+    this.artworkPath = const Value.absent(),
+    this.source = const Value.absent(),
+    this.dateAdded = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AlbumArtworksCompanion.insert({
+    required String albumKey,
+    required String album,
+    required String artist,
+    required String artworkPath,
+    this.source = const Value.absent(),
+    required DateTime dateAdded,
+    this.rowid = const Value.absent(),
+  }) : albumKey = Value(albumKey),
+       album = Value(album),
+       artist = Value(artist),
+       artworkPath = Value(artworkPath),
+       dateAdded = Value(dateAdded);
+  static Insertable<AlbumArtwork> custom({
+    Expression<String>? albumKey,
+    Expression<String>? album,
+    Expression<String>? artist,
+    Expression<String>? artworkPath,
+    Expression<String>? source,
+    Expression<DateTime>? dateAdded,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (albumKey != null) 'album_key': albumKey,
+      if (album != null) 'album': album,
+      if (artist != null) 'artist': artist,
+      if (artworkPath != null) 'artwork_path': artworkPath,
+      if (source != null) 'source': source,
+      if (dateAdded != null) 'date_added': dateAdded,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AlbumArtworksCompanion copyWith({
+    Value<String>? albumKey,
+    Value<String>? album,
+    Value<String>? artist,
+    Value<String>? artworkPath,
+    Value<String>? source,
+    Value<DateTime>? dateAdded,
+    Value<int>? rowid,
+  }) {
+    return AlbumArtworksCompanion(
+      albumKey: albumKey ?? this.albumKey,
+      album: album ?? this.album,
+      artist: artist ?? this.artist,
+      artworkPath: artworkPath ?? this.artworkPath,
+      source: source ?? this.source,
+      dateAdded: dateAdded ?? this.dateAdded,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (albumKey.present) {
+      map['album_key'] = Variable<String>(albumKey.value);
+    }
+    if (album.present) {
+      map['album'] = Variable<String>(album.value);
+    }
+    if (artist.present) {
+      map['artist'] = Variable<String>(artist.value);
+    }
+    if (artworkPath.present) {
+      map['artwork_path'] = Variable<String>(artworkPath.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (dateAdded.present) {
+      map['date_added'] = Variable<DateTime>(dateAdded.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AlbumArtworksCompanion(')
+          ..write('albumKey: $albumKey, ')
+          ..write('album: $album, ')
+          ..write('artist: $artist, ')
+          ..write('artworkPath: $artworkPath, ')
+          ..write('source: $source, ')
+          ..write('dateAdded: $dateAdded, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $TracksTable tracks = $TracksTable(this);
   late final $PlaylistsTable playlists = $PlaylistsTable(this);
   late final $PlaylistTracksTable playlistTracks = $PlaylistTracksTable(this);
+  late final $TrackLyricsTable trackLyrics = $TrackLyricsTable(this);
+  late final $AlbumArtworksTable albumArtworks = $AlbumArtworksTable(this);
   late final Index idxTracksTitle = Index(
     'idx_tracks_title',
     'CREATE INDEX idx_tracks_title ON tracks (title)',
@@ -1915,6 +2705,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tracks,
     playlists,
     playlistTracks,
+    trackLyrics,
+    albumArtworks,
     idxTracksTitle,
     idxTracksArtist,
     idxTracksAlbum,
@@ -3271,6 +4063,449 @@ typedef $$PlaylistTracksTableProcessedTableManager =
       PlaylistTrack,
       PrefetchHooks Function({bool playlistId, bool trackId})
     >;
+typedef $$TrackLyricsTableCreateCompanionBuilder =
+    TrackLyricsCompanion Function({
+      required String trackId,
+      Value<String?> plainLyrics,
+      Value<String?> syncedLyrics,
+      Value<String> source,
+      required DateTime updatedAt,
+      Value<int> rowid,
+    });
+typedef $$TrackLyricsTableUpdateCompanionBuilder =
+    TrackLyricsCompanion Function({
+      Value<String> trackId,
+      Value<String?> plainLyrics,
+      Value<String?> syncedLyrics,
+      Value<String> source,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$TrackLyricsTableFilterComposer
+    extends Composer<_$AppDatabase, $TrackLyricsTable> {
+  $$TrackLyricsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get trackId => $composableBuilder(
+    column: $table.trackId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get plainLyrics => $composableBuilder(
+    column: $table.plainLyrics,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncedLyrics => $composableBuilder(
+    column: $table.syncedLyrics,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TrackLyricsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TrackLyricsTable> {
+  $$TrackLyricsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get trackId => $composableBuilder(
+    column: $table.trackId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get plainLyrics => $composableBuilder(
+    column: $table.plainLyrics,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncedLyrics => $composableBuilder(
+    column: $table.syncedLyrics,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TrackLyricsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TrackLyricsTable> {
+  $$TrackLyricsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get trackId =>
+      $composableBuilder(column: $table.trackId, builder: (column) => column);
+
+  GeneratedColumn<String> get plainLyrics => $composableBuilder(
+    column: $table.plainLyrics,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncedLyrics => $composableBuilder(
+    column: $table.syncedLyrics,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$TrackLyricsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TrackLyricsTable,
+          TrackLyric,
+          $$TrackLyricsTableFilterComposer,
+          $$TrackLyricsTableOrderingComposer,
+          $$TrackLyricsTableAnnotationComposer,
+          $$TrackLyricsTableCreateCompanionBuilder,
+          $$TrackLyricsTableUpdateCompanionBuilder,
+          (
+            TrackLyric,
+            BaseReferences<_$AppDatabase, $TrackLyricsTable, TrackLyric>,
+          ),
+          TrackLyric,
+          PrefetchHooks Function()
+        > {
+  $$TrackLyricsTableTableManager(_$AppDatabase db, $TrackLyricsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TrackLyricsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TrackLyricsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TrackLyricsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> trackId = const Value.absent(),
+                Value<String?> plainLyrics = const Value.absent(),
+                Value<String?> syncedLyrics = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TrackLyricsCompanion(
+                trackId: trackId,
+                plainLyrics: plainLyrics,
+                syncedLyrics: syncedLyrics,
+                source: source,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String trackId,
+                Value<String?> plainLyrics = const Value.absent(),
+                Value<String?> syncedLyrics = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => TrackLyricsCompanion.insert(
+                trackId: trackId,
+                plainLyrics: plainLyrics,
+                syncedLyrics: syncedLyrics,
+                source: source,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TrackLyricsTable, TrackLyric>(table),
+                  BaseReferences<_$AppDatabase, $TrackLyricsTable, TrackLyric>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TrackLyricsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TrackLyricsTable,
+      TrackLyric,
+      $$TrackLyricsTableFilterComposer,
+      $$TrackLyricsTableOrderingComposer,
+      $$TrackLyricsTableAnnotationComposer,
+      $$TrackLyricsTableCreateCompanionBuilder,
+      $$TrackLyricsTableUpdateCompanionBuilder,
+      (
+        TrackLyric,
+        BaseReferences<_$AppDatabase, $TrackLyricsTable, TrackLyric>,
+      ),
+      TrackLyric,
+      PrefetchHooks Function()
+    >;
+typedef $$AlbumArtworksTableCreateCompanionBuilder =
+    AlbumArtworksCompanion Function({
+      required String albumKey,
+      required String album,
+      required String artist,
+      required String artworkPath,
+      Value<String> source,
+      required DateTime dateAdded,
+      Value<int> rowid,
+    });
+typedef $$AlbumArtworksTableUpdateCompanionBuilder =
+    AlbumArtworksCompanion Function({
+      Value<String> albumKey,
+      Value<String> album,
+      Value<String> artist,
+      Value<String> artworkPath,
+      Value<String> source,
+      Value<DateTime> dateAdded,
+      Value<int> rowid,
+    });
+
+class $$AlbumArtworksTableFilterComposer
+    extends Composer<_$AppDatabase, $AlbumArtworksTable> {
+  $$AlbumArtworksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get albumKey => $composableBuilder(
+    column: $table.albumKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get album => $composableBuilder(
+    column: $table.album,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get artworkPath => $composableBuilder(
+    column: $table.artworkPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AlbumArtworksTableOrderingComposer
+    extends Composer<_$AppDatabase, $AlbumArtworksTable> {
+  $$AlbumArtworksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get albumKey => $composableBuilder(
+    column: $table.albumKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get album => $composableBuilder(
+    column: $table.album,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get artworkPath => $composableBuilder(
+    column: $table.artworkPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateAdded => $composableBuilder(
+    column: $table.dateAdded,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AlbumArtworksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AlbumArtworksTable> {
+  $$AlbumArtworksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get albumKey =>
+      $composableBuilder(column: $table.albumKey, builder: (column) => column);
+
+  GeneratedColumn<String> get album =>
+      $composableBuilder(column: $table.album, builder: (column) => column);
+
+  GeneratedColumn<String> get artist =>
+      $composableBuilder(column: $table.artist, builder: (column) => column);
+
+  GeneratedColumn<String> get artworkPath => $composableBuilder(
+    column: $table.artworkPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateAdded =>
+      $composableBuilder(column: $table.dateAdded, builder: (column) => column);
+}
+
+class $$AlbumArtworksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AlbumArtworksTable,
+          AlbumArtwork,
+          $$AlbumArtworksTableFilterComposer,
+          $$AlbumArtworksTableOrderingComposer,
+          $$AlbumArtworksTableAnnotationComposer,
+          $$AlbumArtworksTableCreateCompanionBuilder,
+          $$AlbumArtworksTableUpdateCompanionBuilder,
+          (
+            AlbumArtwork,
+            BaseReferences<_$AppDatabase, $AlbumArtworksTable, AlbumArtwork>,
+          ),
+          AlbumArtwork,
+          PrefetchHooks Function()
+        > {
+  $$AlbumArtworksTableTableManager(_$AppDatabase db, $AlbumArtworksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AlbumArtworksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlbumArtworksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlbumArtworksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> albumKey = const Value.absent(),
+                Value<String> album = const Value.absent(),
+                Value<String> artist = const Value.absent(),
+                Value<String> artworkPath = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> dateAdded = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AlbumArtworksCompanion(
+                albumKey: albumKey,
+                album: album,
+                artist: artist,
+                artworkPath: artworkPath,
+                source: source,
+                dateAdded: dateAdded,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String albumKey,
+                required String album,
+                required String artist,
+                required String artworkPath,
+                Value<String> source = const Value.absent(),
+                required DateTime dateAdded,
+                Value<int> rowid = const Value.absent(),
+              }) => AlbumArtworksCompanion.insert(
+                albumKey: albumKey,
+                album: album,
+                artist: artist,
+                artworkPath: artworkPath,
+                source: source,
+                dateAdded: dateAdded,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AlbumArtworksTable, AlbumArtwork>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AlbumArtworksTable,
+                    AlbumArtwork
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AlbumArtworksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AlbumArtworksTable,
+      AlbumArtwork,
+      $$AlbumArtworksTableFilterComposer,
+      $$AlbumArtworksTableOrderingComposer,
+      $$AlbumArtworksTableAnnotationComposer,
+      $$AlbumArtworksTableCreateCompanionBuilder,
+      $$AlbumArtworksTableUpdateCompanionBuilder,
+      (
+        AlbumArtwork,
+        BaseReferences<_$AppDatabase, $AlbumArtworksTable, AlbumArtwork>,
+      ),
+      AlbumArtwork,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3281,4 +4516,8 @@ class $AppDatabaseManager {
       $$PlaylistsTableTableManager(_db, _db.playlists);
   $$PlaylistTracksTableTableManager get playlistTracks =>
       $$PlaylistTracksTableTableManager(_db, _db.playlistTracks);
+  $$TrackLyricsTableTableManager get trackLyrics =>
+      $$TrackLyricsTableTableManager(_db, _db.trackLyrics);
+  $$AlbumArtworksTableTableManager get albumArtworks =>
+      $$AlbumArtworksTableTableManager(_db, _db.albumArtworks);
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/app_preferences_service.dart';
 import '../../library/presentation/library_providers.dart';
+import '../../metadata/presentation/metadata_providers.dart';
 import '../data/fake_audio_player_facade.dart';
 import '../data/just_audio_player_facade.dart';
 import '../data/sonora_audio_handler.dart';
@@ -219,6 +220,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
 
   int _loadRequestId = 0;
   String? _loadedTrackId;
+  bool _isDisposed = false;
 
   /// Persists current track, position, and queue to preferences.
   Future<void> saveCurrentSession() async {
@@ -296,6 +298,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       };
 
       ref.onDispose(() {
+        _isDisposed = true;
         handler.onSkipToNext = null;
         handler.onSkipToPrevious = null;
         handler.onSkipToQueueItem = null;
@@ -540,6 +543,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
         clearError: true,
       );
       await saveCurrentSession();
+      _resolveMissingArtwork(track);
     } catch (e) {
       if (requestId != _loadRequestId) return;
       state = state.copyWith(
@@ -559,6 +563,72 @@ class PlayerNotifier extends Notifier<PlayerState> {
       return msg;
     }
     return 'Unable to play "${track.title}": $msg';
+  }
+
+  void _resolveMissingArtwork(UiTrack track) {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
+    if (_isDisposed) return;
+    if (track.artworkPath != null && track.artworkPath!.isNotEmpty) return;
+    try {
+      final repo = ref.read(metadataRepositoryProvider);
+      final albumKey = repo.getAlbumKey(track.artist, track.album);
+      ref.read(artworkFetchingProvider.notifier).markFetching(albumKey);
+
+      repo
+          .resolveAlbumArtwork(
+            artist: track.artist,
+            album: track.album,
+            trackTitle: track.title,
+            currentTrackArtworkPath: track.artworkPath,
+          )
+          .then((resolvedPath) {
+            if (_isDisposed) return;
+            ref.read(artworkFetchingProvider.notifier).markComplete(albumKey);
+            if (resolvedPath != null) {
+              updateArtworkForAlbum(
+                artist: track.artist,
+                album: track.album,
+                artworkPath: resolvedPath,
+              );
+            }
+          })
+          .catchError((_) {
+            if (!_isDisposed) {
+              ref.read(artworkFetchingProvider.notifier).markComplete(albumKey);
+            }
+          });
+    } catch (_) {}
+  }
+
+  /// Updates album artwork across currently queued and active tracks.
+  void updateArtworkForAlbum({
+    required String artist,
+    required String album,
+    required String artworkPath,
+  }) {
+    final updatedQueue = state.queue.map((t) {
+      if (t.album == album &&
+          t.artist == artist &&
+          (t.artworkPath == null || t.artworkPath!.isEmpty)) {
+        return t.copyWith(artworkPath: artworkPath);
+      }
+      return t;
+    }).toList();
+
+    UiTrack? updatedTrack = state.track;
+    if (updatedTrack != null &&
+        updatedTrack.album == album &&
+        updatedTrack.artist == artist &&
+        (updatedTrack.artworkPath == null ||
+            updatedTrack.artworkPath!.isEmpty)) {
+      updatedTrack = updatedTrack.copyWith(artworkPath: artworkPath);
+      _handler?.updateActiveTrack(updatedTrack);
+    }
+
+    state = state.copyWith(
+      track: updatedTrack,
+      queue: List.unmodifiable(updatedQueue),
+    );
   }
 
   /// Sets the queue and original sequence directly.

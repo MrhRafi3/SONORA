@@ -8,6 +8,7 @@ import '../../../shared/widgets/animated_play_pause_button.dart';
 import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
 import '../../../shared/widgets/track_tile.dart';
+import '../../metadata/presentation/metadata_providers.dart';
 import '../domain/ui_track.dart';
 import 'player_state.dart';
 import 'widgets/audio_inspector_sheet.dart';
@@ -221,6 +222,10 @@ class PlayerScreen extends ConsumerWidget {
         ? (screenWidth * 0.72).clamp(200.0, 300.0)
         : (screenHeight * 0.32).clamp(140.0, 200.0);
 
+    final albumKey =
+        '${track.artist.toLowerCase().trim()}__${track.album.toLowerCase().trim()}';
+    final isFetchingArt = ref.watch(isAlbumArtworkFetchingProvider(albumKey));
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -299,6 +304,7 @@ class PlayerScreen extends ConsumerWidget {
                           showGlow: true,
                           heroTag: 'now-playing-art',
                           artworkPath: track.artworkPath,
+                          isLoading: isFetchingArt,
                         ),
 
                         const SizedBox(height: AppSpacing.lg),

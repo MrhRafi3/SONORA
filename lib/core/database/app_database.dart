@@ -6,7 +6,9 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Tracks, Playlists, PlaylistTracks])
+@DriftDatabase(
+  tables: [Tracks, Playlists, PlaylistTracks, TrackLyrics, AlbumArtworks],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
     : super(executor ?? _openConnection()) {
@@ -14,7 +16,18 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(trackLyrics);
+        await m.createTable(albumArtworks);
+      }
+    },
+  );
 
   static QueryExecutor _openConnection() {
     if (Platform.environment.containsKey('FLUTTER_TEST')) {
@@ -338,5 +351,103 @@ class AppDatabase extends _$AppDatabase {
           ..orderBy([(t) => OrderingTerm.desc(t.dateAdded)])
           ..limit(limit))
         .watch();
+  }
+
+  // --- Track Lyrics Operations ---
+
+  Future<TrackLyric?> getLyricsForTrack(String trackId) {
+    return (select(
+      trackLyrics,
+    )..where((l) => l.trackId.equals(trackId))).getSingleOrNull();
+  }
+
+  Stream<TrackLyric?> watchLyricsForTrack(String trackId) {
+    return (select(
+      trackLyrics,
+    )..where((l) => l.trackId.equals(trackId))).watchSingleOrNull();
+  }
+
+  Future<void> saveLyrics({
+    required String trackId,
+    String? plainLyrics,
+    String? syncedLyrics,
+    String source = 'lrclib',
+  }) {
+    return into(trackLyrics).insertOnConflictUpdate(
+      TrackLyricsCompanion(
+        trackId: Value(trackId),
+        plainLyrics: Value(plainLyrics),
+        syncedLyrics: Value(syncedLyrics),
+        source: Value(source),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<int> deleteLyricsForTrack(String trackId) {
+    return (delete(trackLyrics)..where((l) => l.trackId.equals(trackId))).go();
+  }
+
+  // --- Album Artworks Operations ---
+
+  Future<AlbumArtwork?> getArtworkForAlbum(String albumKey) {
+    return (select(
+      albumArtworks,
+    )..where((a) => a.albumKey.equals(albumKey))).getSingleOrNull();
+  }
+
+  Stream<AlbumArtwork?> watchArtworkForAlbum(String albumKey) {
+    return (select(
+      albumArtworks,
+    )..where((a) => a.albumKey.equals(albumKey))).watchSingleOrNull();
+  }
+
+  Future<void> saveAlbumArtwork({
+    required String albumKey,
+    required String album,
+    required String artist,
+    required String artworkPath,
+    String source = 'online',
+  }) {
+    return into(albumArtworks).insertOnConflictUpdate(
+      AlbumArtworksCompanion(
+        albumKey: Value(albumKey),
+        album: Value(album),
+        artist: Value(artist),
+        artworkPath: Value(artworkPath),
+        source: Value(source),
+        dateAdded: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Updates all tracks of [album] and [artist] that currently lack artwork.
+  /// Preserves existing embedded artwork by only targeting null or empty `artworkPath`.
+  Future<int> updateAlbumTracksArtwork({
+    required String artist,
+    required String album,
+    required String artworkPath,
+  }) {
+    return (update(tracks)..where(
+          (t) =>
+              t.album.equals(album) &
+              t.artist.equals(artist) &
+              (t.artworkPath.isNull() | t.artworkPath.equals('')),
+        ))
+        .write(TracksCompanion(artworkPath: Value(artworkPath)));
+  }
+
+  /// Directly updates artwork for a specific track (only if it currently lacks artwork,
+  /// unless [overrideExisting] is explicitly true).
+  Future<int> updateTrackArtwork(
+    String trackId,
+    String artworkPath, {
+    bool overrideExisting = false,
+  }) {
+    final query = update(tracks)..where((t) => t.id.equals(trackId));
+    if (!overrideExisting) {
+      query.where((t) => t.artworkPath.isNull() | t.artworkPath.equals(''));
+    }
+    return query.write(TracksCompanion(artworkPath: Value(artworkPath)));
   }
 }

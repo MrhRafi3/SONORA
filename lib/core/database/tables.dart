@@ -63,3 +63,28 @@ class PlaylistTracks extends Table {
   @override
   Set<Column> get primaryKey => {playlistId, trackId};
 }
+
+/// Persisted lyrics for tracks (LRC synchronized and plain text).
+class TrackLyrics extends Table {
+  TextColumn get trackId => text()();
+  TextColumn get plainLyrics => text().nullable()();
+  TextColumn get syncedLyrics => text().nullable()();
+  TextColumn get source => text().withDefault(const Constant('lrclib'))();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {trackId};
+}
+
+/// Cached album-level artwork associations to avoid duplicate fetches and disk waste.
+class AlbumArtworks extends Table {
+  TextColumn get albumKey => text()(); // normalized artist + album
+  TextColumn get album => text()();
+  TextColumn get artist => text()();
+  TextColumn get artworkPath => text()();
+  TextColumn get source => text().withDefault(const Constant('online'))();
+  DateTimeColumn get dateAdded => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {albumKey};
+}
