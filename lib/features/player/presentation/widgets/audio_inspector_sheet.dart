@@ -100,22 +100,49 @@ class AudioInspectorSheet extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: Column(
-                children: [
-                  _buildSpecRow('Audio Codec', track.audioFormat),
-                  _buildSpecRow('Sample Frequency', track.sampleRate),
-                  _buildSpecRow('Bit Depth / Precision', track.bitDepth),
-                  _buildSpecRow('Channels', 'Stereo (2 Channels Interleaved)'),
-                  _buildSpecRow(
-                    'DSP Engine',
-                    'C++17 Direct Form II Transposed',
-                  ),
-                  _buildSpecRow('Buffer Latency', '< 0.04 ms (679x Real-Time)'),
-                  _buildSpecRow(
-                    'Storage Path',
-                    track.filePath ?? 'Direct-to-DSD Remaster',
-                  ),
-                ],
+              child: Builder(
+                builder: (context) {
+                  final isRealLocalTrack =
+                      track.filePath != null || track.sourceUri != null;
+                  return Column(
+                    children: [
+                      _buildSpecRow('Audio Codec', track.audioFormat),
+                      _buildSpecRow('Sample Frequency', track.sampleRate),
+                      _buildSpecRow('Bit Depth / Precision', track.bitDepth),
+                      _buildSpecRow(
+                        'Channels',
+                        'Stereo (2 Channels Interleaved)',
+                      ),
+                      if (isRealLocalTrack) ...[
+                        _buildSpecRow(
+                          'Audio Engine',
+                          'Platform Audio Session (Native Decoder)',
+                        ),
+                        _buildSpecRow(
+                          'DSP Pipeline',
+                          'Direct Bit-Pass (Phase 06 C++ Pending)',
+                        ),
+                        _buildSpecRow(
+                          'Storage Path',
+                          track.filePath ??
+                              track.sourceUri ??
+                              'Device MediaStore',
+                        ),
+                      ] else ...[
+                        _buildSpecRow(
+                          'DSP Engine',
+                          'C++17 Direct Form II Transposed',
+                        ),
+                        _buildSpecRow(
+                          'Buffer Latency',
+                          '< 0.04 ms (679x Real-Time)',
+                        ),
+                        const SizedBox.shrink(),
+                        _buildSpecRow('Storage Path', 'Direct-to-DSD Remaster'),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
 

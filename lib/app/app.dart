@@ -1,16 +1,47 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/app_preferences_service.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_accent.dart';
 
 /// Notifier for managing active [ThemeMode]. Defaults to [ThemeMode.dark].
 class ThemeModeNotifier extends Notifier<ThemeMode> {
+  static const _prefKey = 'theme_mode';
+  bool _hasUserOverride = false;
+
   @override
-  ThemeMode build() => ThemeMode.dark;
+  ThemeMode build() {
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(_hydrate());
+    }
+    return ThemeMode.dark;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await const AppPreferencesService().loadAll();
+    if (!ref.mounted || _hasUserOverride) return;
+    final parsed = AppPreferencesService.parseThemeMode(
+      prefs[_prefKey] as String?,
+    );
+    if (parsed != null) {
+      state = parsed;
+    }
+  }
 
   void setThemeMode(ThemeMode mode) {
+    _hasUserOverride = true;
     state = mode;
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(
+        const AppPreferencesService().updateKey(
+          _prefKey,
+          AppPreferencesService.serializeThemeMode(mode),
+        ),
+      );
+    }
   }
 }
 

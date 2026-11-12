@@ -30,7 +30,7 @@ void main() async {
         androidNotificationChannelName: 'SONORA Audio Playback',
         androidNotificationChannelDescription:
             'SONORA Audiophile Music Playback Controls',
-        androidNotificationIcon: 'mipmap/ic_launcher',
+        androidNotificationIcon: 'drawable/ic_stat_sonora',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: true,
         notificationColor: Color(0xFFE59866),

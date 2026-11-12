@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../shared/utils/scan_feedback.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
+import '../../../shared/widgets/track_options_sheet.dart';
 import '../../../shared/widgets/track_tile.dart';
 import '../../player/domain/ui_track.dart';
 import '../../player/presentation/player_state.dart';
@@ -60,30 +62,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startAndroidScan();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Scan complete: discovered ${summary.newlyAddedCount} tracks.'
-                : (summary.errorMessage ?? 'Audio scan failed.'),
-          ),
-        ),
-      );
+      if (!mounted) return;
+      showScanFeedback(context, summary);
     } else {
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startIosImport();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Import complete: added ${summary.newlyAddedCount} audio files.'
-                : (summary.errorMessage ?? 'Audio import failed.'),
-          ),
-        ),
-      );
+      if (!mounted) return;
+      showScanFeedback(context, summary, isIosImport: true);
     }
   }
 
@@ -379,6 +365,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen>
                                   onTap: () => ref
                                       .read(playerProvider.notifier)
                                       .playTrack(track, queue: activeUiTracks),
+                                  onMoreOptions: () => showTrackOptionsSheet(
+                                    context,
+                                    ref,
+                                    track,
+                                  ),
                                 );
                               },
                             ),
@@ -434,36 +425,68 @@ class _AlbumsView extends ConsumerWidget {
             itemCount: albums.length,
             itemBuilder: (context, index) {
               final album = albums[index];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: SonoraArtwork(
-                      size: double.infinity,
-                      artworkPath: album.artworkPath,
+              return InkWell(
+                borderRadius: AppSpacing.roundedMd,
+                onTap: () {
+                  final allTracks =
+                      ref.read(tracksStreamProvider).asData?.value ?? [];
+                  final albumTracks =
+                      allTracks
+                          .where((t) => t.displayAlbum == album.name)
+                          .toList()
+                        ..sort((a, b) {
+                          final discCmp = (a.discNumber ?? 0).compareTo(
+                            b.discNumber ?? 0,
+                          );
+                          if (discCmp != 0) return discCmp;
+                          final trackCmp = (a.trackNumber ?? 0).compareTo(
+                            b.trackNumber ?? 0,
+                          );
+                          if (trackCmp != 0) return trackCmp;
+                          return a.title.compareTo(b.title);
+                        });
+                  _showCollectionTracksSheet(
+                    context: context,
+                    ref: ref,
+                    title: album.name,
+                    subtitle: album.artist,
+                    artworkPath: album.artworkPath,
+                    tracks: albumTracks.map((t) => t.toUiTrack()).toList(),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: SonoraArtwork(
+                        size: double.infinity,
+                        artworkPath: album.artworkPath,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    album.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      album.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    album.artist,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontSize: 11,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    Text(
+                      album.artist,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  FormatBadge(label: '${album.trackCount} tracks'),
-                ],
+                    const SizedBox(height: 2),
+                    FormatBadge(label: '${album.trackCount} tracks'),
+                  ],
+                ),
               );
             },
           );
@@ -556,59 +579,79 @@ class _ArtistsView extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.sm),
             itemBuilder: (context, index) {
               final artist = artists[index];
-              return Container(
-                padding: AppSpacing.insetsMd,
-                decoration: BoxDecoration(
-                  color: sonora.surfaceElevated,
-                  borderRadius: AppSpacing.roundedMd,
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withValues(alpha: 0.15),
-                    width: 1,
+              return InkWell(
+                borderRadius: AppSpacing.roundedMd,
+                onTap: () {
+                  final allTracks =
+                      ref.read(tracksStreamProvider).asData?.value ?? [];
+                  final artistTracks =
+                      allTracks
+                          .where((t) => t.displayArtist == artist.name)
+                          .toList()
+                        ..sort((a, b) => a.title.compareTo(b.title));
+                  _showCollectionTracksSheet(
+                    context: context,
+                    ref: ref,
+                    title: artist.name,
+                    subtitle:
+                        '${artist.trackCount} tracks • ${artist.albumCount} albums',
+                    tracks: artistTracks.map((t) => t.toUiTrack()).toList(),
+                  );
+                },
+                child: Container(
+                  padding: AppSpacing.insetsMd,
+                  decoration: BoxDecoration(
+                    color: sonora.surfaceElevated,
+                    borderRadius: AppSpacing.roundedMd,
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.darkSurfaceElevated,
-                        border: Border.all(
-                          color: AppColors.darkAccent.withValues(alpha: 0.5),
-                          width: 1.5,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.darkSurfaceElevated,
+                          border: Border.all(
+                            color: AppColors.darkAccent.withValues(alpha: 0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: AppColors.darkAccent,
+                          size: 24,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.person_outline_rounded,
-                        color: AppColors.darkAccent,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            artist.name,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            '${artist.trackCount} tracks • ${artist.albumCount} albums',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(
-                                alpha: 0.5,
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              artist.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                          ),
-                        ],
+                            Text(
+                              '${artist.trackCount} tracks • ${artist.albumCount} albums',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, size: 20),
-                  ],
+                      const Icon(Icons.chevron_right_rounded, size: 20),
+                    ],
+                  ),
                 ),
               );
             },
@@ -892,8 +935,33 @@ class _PlaylistsView extends ConsumerWidget {
                     ),
                   ),
                   trailing: IconButton(
+                    tooltip: 'Delete Playlist',
                     icon: const Icon(Icons.delete_outline_rounded, size: 20),
                     onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            title: const Text('Delete Playlist'),
+                            content: Text(
+                              'Delete "${playlist.name}"? Your audio files on device will not be removed.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, false),
+                                child: const Text('Cancel'),
+                              ),
+                              FilledButton(
+                                onPressed: () =>
+                                    Navigator.pop(dialogContext, true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                      if (confirmed != true) return;
                       await ref
                           .read(musicLibraryRepositoryProvider)
                           .deletePlaylist(playlist.id);
@@ -913,4 +981,144 @@ class _PlaylistsView extends ConsumerWidget {
   String _formatDate(DateTime dt) {
     return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
   }
+}
+
+void _showCollectionTracksSheet({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String title,
+  required String subtitle,
+  String? artworkPath,
+  required List<UiTrack> tracks,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.sonoraTheme.surfaceElevated,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: AppSpacing.cornerLg),
+    ),
+    builder: (sheetContext) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          final theme = Theme.of(context);
+          return SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      SonoraArtwork(size: 56, artworkPath: artworkPath),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
+                  ),
+                ),
+                if (tracks.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              ref
+                                  .read(playerProvider.notifier)
+                                  .playTrack(tracks.first, queue: tracks);
+                              Navigator.pop(sheetContext);
+                            },
+                            icon: const Icon(Icons.play_arrow_rounded),
+                            label: const Text('Play All'),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              final shuffled = List<UiTrack>.from(tracks)
+                                ..shuffle();
+                              ref
+                                  .read(playerProvider.notifier)
+                                  .playTrack(shuffled.first, queue: shuffled);
+                              Navigator.pop(sheetContext);
+                            },
+                            icon: const Icon(Icons.shuffle_rounded),
+                            label: const Text('Shuffle'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const Divider(),
+                Expanded(
+                  child: tracks.isEmpty
+                      ? const Center(child: Text('No tracks found.'))
+                      : ListView.builder(
+                          controller: scrollController,
+                          itemCount: tracks.length,
+                          itemBuilder: (context, index) {
+                            final track = tracks[index];
+                            return TrackTile(
+                              track: track,
+                              trackIndex: index + 1,
+                              onTap: () {
+                                ref
+                                    .read(playerProvider.notifier)
+                                    .playTrack(track, queue: tracks);
+                                Navigator.pop(sheetContext);
+                              },
+                              onMoreOptions: () =>
+                                  showTrackOptionsSheet(context, ref, track),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
 }

@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/app_preferences_service.dart';
 
 /// Immutable container holding user playback, audio processing, and system preferences.
 @immutable
@@ -49,8 +52,25 @@ class SettingsState {
 
 /// StateNotifier managing app-wide settings persistence and reactive updates.
 class SettingsNotifier extends Notifier<SettingsState> {
+  static const _pauseOnDisconnectKey = 'pause_on_disconnect';
+  bool _hasPauseOnDisconnectOverride = false;
+
   @override
-  SettingsState build() => const SettingsState();
+  SettingsState build() {
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(_hydrate());
+    }
+    return const SettingsState();
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await const AppPreferencesService().loadAll();
+    if (!ref.mounted || _hasPauseOnDisconnectOverride) return;
+    final pauseOnDisconnect = prefs[_pauseOnDisconnectKey];
+    if (pauseOnDisconnect is bool) {
+      state = state.copyWith(pauseOnDisconnect: pauseOnDisconnect);
+    }
+  }
 
   void setBitPerfect(bool enabled) {
     state = state.copyWith(bitPerfectOutput: enabled);
@@ -69,7 +89,13 @@ class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   void setPauseOnDisconnect(bool enabled) {
+    _hasPauseOnDisconnectOverride = true;
     state = state.copyWith(pauseOnDisconnect: enabled);
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(
+        const AppPreferencesService().updateKey(_pauseOnDisconnectKey, enabled),
+      );
+    }
   }
 
   void setHighResDirectDac(bool enabled) {

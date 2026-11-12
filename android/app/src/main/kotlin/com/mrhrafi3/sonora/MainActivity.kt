@@ -3,30 +3,46 @@ package com.mrhrafi3.sonora
 import android.content.ContentUris
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class MainActivity : AudioServiceActivity() {
-    private val CHANNEL = "com.mrhrafi3.sonora/mediastore"
+    private val channelName = "com.mrhrafi3.sonora/mediastore"
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
             when (call.method) {
+                "getSdkInt" -> result.success(Build.VERSION.SDK_INT)
                 "queryAudioTracks" -> {
-                    try {
-                        val tracks = queryAudioTracks()
-                        result.success(tracks)
-                    } catch (e: Exception) {
-                        result.error("MEDIASTORE_ERROR", e.localizedMessage, null)
+                    executor.execute {
+                        try {
+                            val tracks = queryAudioTracks()
+                            mainHandler.post { result.success(tracks) }
+                        } catch (e: Exception) {
+                            mainHandler.post {
+                                result.error("MEDIASTORE_ERROR", e.localizedMessage, null)
+                            }
+                        }
                     }
                 }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onDestroy() {
+        executor.shutdown()
+        super.onDestroy()
     }
 
     private fun queryAudioTracks(): List<Map<String, Any?>> {
@@ -42,6 +58,7 @@ class MainActivity : AudioServiceActivity() {
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.DURATION,
@@ -54,13 +71,19 @@ class MainActivity : AudioServiceActivity() {
             MediaStore.Audio.Media.ALBUM_ID
         )
 
-        // Select audio files longer than 5 seconds to ignore system ringtones & notification sounds
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND ${MediaStore.Audio.Media.DURATION} >= 5000"
+        // Select music tracks >= 5s (to skip UI/ringtones), while still allowing raw .aac streams
+        // whose duration MediaStore may report as 0.
+        val selection =
+            "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND (" +
+                "${MediaStore.Audio.Media.DURATION} >= 5000 OR " +
+                "${MediaStore.Audio.Media.DISPLAY_NAME} LIKE '%.aac' OR " +
+                "${MediaStore.Audio.Media.DATA} LIKE '%.aac')"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC"
 
         contentResolver.query(collection, projection, selection, null, sortOrder)?.use { cursor ->
             val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val titleCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val displayNameCol = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
             val artistCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val albumCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val durationCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
@@ -76,6 +99,7 @@ class MainActivity : AudioServiceActivity() {
                 val id = cursor.getLong(idCol)
                 val contentUri = ContentUris.withAppendedId(collection, id).toString()
                 val data = cursor.getString(dataCol) ?: ""
+                val displayName = if (displayNameCol >= 0) cursor.getString(displayNameCol) ?: "" else ""
                 val title = cursor.getString(titleCol) ?: ""
                 val artist = cursor.getString(artistCol)
                 val album = cursor.getString(albumCol)
@@ -91,6 +115,7 @@ class MainActivity : AudioServiceActivity() {
                     "id" to id.toString(),
                     "contentUri" to contentUri,
                     "filePath" to data,
+                    "displayName" to displayName,
                     "title" to title,
                     "artist" to artist,
                     "album" to album,

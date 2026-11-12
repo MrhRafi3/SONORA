@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../shared/utils/scan_feedback.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/settings_tile.dart';
 import '../../../library/presentation/library_providers.dart';
@@ -20,30 +21,14 @@ class LibraryStorageSettingsScreen extends ConsumerWidget {
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startAndroidScan();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Scan complete: discovered ${summary.newlyAddedCount} new tracks.'
-                : (summary.errorMessage ?? 'Audio scan failed.'),
-          ),
-        ),
-      );
+      if (!context.mounted) return;
+      showScanFeedback(context, summary);
     } else {
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startIosImport();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Import complete: added ${summary.newlyAddedCount} audio files.'
-                : (summary.errorMessage ?? 'Audio import failed.'),
-          ),
-        ),
-      );
+      if (!context.mounted) return;
+      showScanFeedback(context, summary, isIosImport: true);
     }
   }
 

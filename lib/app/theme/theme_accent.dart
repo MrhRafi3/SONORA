@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/app_preferences_service.dart';
 
 /// Available audiophile accent color palettes in SONORA.
 enum ThemeAccent {
@@ -63,11 +66,34 @@ enum ThemeAccent {
 
 /// Riverpod notifier managing active accent theme.
 class ThemeAccentNotifier extends Notifier<ThemeAccent> {
+  static const _prefKey = 'theme_accent';
+  bool _hasUserOverride = false;
+
   @override
-  ThemeAccent build() => ThemeAccent.amberWarmth;
+  ThemeAccent build() {
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(_hydrate());
+    }
+    return ThemeAccent.amberWarmth;
+  }
+
+  Future<void> _hydrate() async {
+    final prefs = await const AppPreferencesService().loadAll();
+    if (!ref.mounted || _hasUserOverride) return;
+    final parsed = AppPreferencesService.parseAccent(
+      prefs[_prefKey] as String?,
+    );
+    if (parsed != null) {
+      state = parsed;
+    }
+  }
 
   void setAccent(ThemeAccent accent) {
+    _hasUserOverride = true;
     state = accent;
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      unawaited(const AppPreferencesService().updateKey(_prefKey, accent.id));
+    }
   }
 }
 

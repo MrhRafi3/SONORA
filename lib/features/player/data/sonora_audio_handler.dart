@@ -11,7 +11,7 @@ import '../domain/ui_track.dart';
 class SonoraAudioHandler extends BaseAudioHandler
     with QueueHandler, SeekHandler {
   SonoraAudioHandler({ja.AudioPlayer? player})
-    : _player = player ?? ja.AudioPlayer() {
+    : _player = player ?? ja.AudioPlayer(handleInterruptions: false) {
     _initStreams();
   }
 
@@ -26,7 +26,12 @@ class SonoraAudioHandler extends BaseAudioHandler
   StreamSubscription<AudioInterruptionEvent>? _interruptionSubscription;
 
   bool _wasInterruptedPlaying = false;
+  bool _isHandlingInterruption = false;
+  bool _pauseOnBecomingNoisy = true;
   bool _audioSessionInitialized = false;
+  int? _queueIndex;
+  AudioServiceRepeatMode _repeatMode = AudioServiceRepeatMode.none;
+  AudioServiceShuffleMode _shuffleMode = AudioServiceShuffleMode.none;
 
   /// External delegation callbacks to harmonize system remote events with
   /// Riverpod PlayerNotifier state.
@@ -35,6 +40,11 @@ class SonoraAudioHandler extends BaseAudioHandler
   ValueChanged<int>? onSkipToQueueItem;
   ValueChanged<AudioServiceRepeatMode>? onSetRepeatMode;
   ValueChanged<AudioServiceShuffleMode>? onSetShuffleMode;
+
+  /// Updates whether headphone/Bluetooth disconnects automatically pause playback.
+  void setPauseOnBecomingNoisy(bool enabled) {
+    _pauseOnBecomingNoisy = enabled;
+  }
 
   void _initStreams() {
     // 1. Listen to just_audio playback events and broadcast PlaybackState
@@ -65,45 +75,56 @@ class SonoraAudioHandler extends BaseAudioHandler
 
       // Becoming noisy: Headphones unplugged or Bluetooth disconnected -> pause immediately
       _noisySubscription = session.becomingNoisyEventStream.listen((_) {
-        pause();
+        if (_pauseOnBecomingNoisy) {
+          pause();
+        }
       });
 
       // Handle phone call and navigation interruptions
-      _interruptionSubscription = session.interruptionEventStream.listen((
-        event,
-      ) {
-        if (event.begin) {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(0.25);
-              break;
-            case AudioInterruptionType.pause:
-            case AudioInterruptionType.unknown:
-              if (_player.playing) {
-                _wasInterruptedPlaying = true;
-                pause();
-              }
-              break;
-          }
-        } else {
-          switch (event.type) {
-            case AudioInterruptionType.duck:
-              _player.setVolume(1.0);
-              break;
-            case AudioInterruptionType.pause:
-              if (_wasInterruptedPlaying) {
-                _wasInterruptedPlaying = false;
-                play();
-              }
-              break;
-            case AudioInterruptionType.unknown:
-              _wasInterruptedPlaying = false;
-              break;
-          }
-        }
-      });
+      _interruptionSubscription = session.interruptionEventStream.listen(
+        handleAudioInterruption,
+      );
     } catch (e) {
       debugPrint('SonoraAudioHandler audio session init failed: $e');
+    }
+  }
+
+  /// Processes an [AudioInterruptionEvent] (exposed for deterministic unit testing).
+  @visibleForTesting
+  Future<void> handleAudioInterruption(AudioInterruptionEvent event) async {
+    if (event.begin) {
+      switch (event.type) {
+        case AudioInterruptionType.duck:
+          await _player.setVolume(0.25);
+          break;
+        case AudioInterruptionType.pause:
+        case AudioInterruptionType.unknown:
+          if (_player.playing) {
+            _wasInterruptedPlaying = true;
+            _isHandlingInterruption = true;
+            try {
+              await pause();
+            } finally {
+              _isHandlingInterruption = false;
+            }
+          }
+          break;
+      }
+    } else {
+      switch (event.type) {
+        case AudioInterruptionType.duck:
+          await _player.setVolume(1.0);
+          break;
+        case AudioInterruptionType.pause:
+          if (_wasInterruptedPlaying) {
+            _wasInterruptedPlaying = false;
+            await play();
+          }
+          break;
+        case AudioInterruptionType.unknown:
+          _wasInterruptedPlaying = false;
+          break;
+      }
     }
   }
 
@@ -139,6 +160,27 @@ class SonoraAudioHandler extends BaseAudioHandler
   /// Synchronizes current active playlist queue with system media browser.
   void updateActiveQueue(List<UiTrack> tracks) {
     queue.add(tracks.map(trackToMediaItem).toList());
+    if (tracks.isEmpty) {
+      _queueIndex = null;
+      _broadcastState();
+    }
+  }
+
+  /// Updates the active queue index broadcast in [PlaybackState].
+  void updateQueueIndex(int? index) {
+    _queueIndex = index;
+    _broadcastState();
+  }
+
+  /// Synchronizes repeat and shuffle modes to system [PlaybackState] without
+  /// triggering remote callbacks.
+  void syncModes({
+    AudioServiceRepeatMode? repeatMode,
+    AudioServiceShuffleMode? shuffleMode,
+  }) {
+    if (repeatMode != null) _repeatMode = repeatMode;
+    if (shuffleMode != null) _shuffleMode = shuffleMode;
+    _broadcastState();
   }
 
   /// Loads an audio track from source URI or local file path into the single player.
@@ -169,6 +211,14 @@ class SonoraAudioHandler extends BaseAudioHandler
       MediaControl.skipToNext,
     ];
 
+    final currentQueueLength = queue.value.length;
+    final safeQueueIndex =
+        (_queueIndex != null &&
+            _queueIndex! >= 0 &&
+            _queueIndex! < currentQueueLength)
+        ? _queueIndex
+        : null;
+
     playbackState.add(
       PlaybackState(
         controls: controls,
@@ -193,7 +243,9 @@ class SonoraAudioHandler extends BaseAudioHandler
         updatePosition: _player.position,
         bufferedPosition: _player.bufferedPosition,
         speed: _player.speed,
-        queueIndex: null,
+        queueIndex: safeQueueIndex,
+        repeatMode: _repeatMode,
+        shuffleMode: _shuffleMode,
       ),
     );
   }
@@ -201,13 +253,22 @@ class SonoraAudioHandler extends BaseAudioHandler
   // --- Remote Media Control Handlers ---
 
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() {
+    _wasInterruptedPlaying = false;
+    return _player.play();
+  }
 
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> pause() {
+    if (!_isHandlingInterruption) {
+      _wasInterruptedPlaying = false;
+    }
+    return _player.pause();
+  }
 
   @override
   Future<void> stop() async {
+    _wasInterruptedPlaying = false;
     await _player.stop();
     await super.stop();
   }

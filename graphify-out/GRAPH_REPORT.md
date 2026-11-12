@@ -1,17 +1,17 @@
 # Graph Report - sonora  (2026-11-12)
 
 ## Corpus Check
-- 865 files · ~728,018 words
+- 869 files · ~733,237 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 60 file(s) not represented in the graph (top: (none) 26, .xml 11, .plist 4)
+- Unclassified: 61 file(s) not represented in the graph (top: (none) 26, .xml 12, .plist 4)
 
 ## Summary
-- 12588 nodes · 14353 edges · 826 communities (785 shown, 41 thin omitted)
+- 12692 nodes · 14530 edges · 830 communities (790 shown, 40 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 308 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0c0fe42c`
+- Built from commit: `44b973c6`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -51,12 +51,12 @@
 - Orchestrator Pipeline (shared engine)
 - tables.dart
 - fake_audio_player_facade.dart
-- load_registry
+- MonkeyPatch
 - Quarkus Verification Loop
 - Examples
 - SonoraEngine
 - API Design Patterns
-- json
+- _promote_auto
 - dependencies
 - Generating Python Installer (Commercial-Grade)
 - Go Development Patterns
@@ -113,10 +113,10 @@
 - Inventory Demand Planning
 - Java Coding Standards
 - Examples
-- React Performance
+- 3. Server-Side Performance (HIGH)
 - macos_ambient_backdrop.dart
 - search_screen.dart
-- equalizer_screen.dart
+- load_all_instincts
 - Carrier Relationship Management
 - Django + Celery Async Task Patterns
 - Docker Patterns
@@ -127,7 +127,7 @@
 - Returns & Reverse Logistics
 - Uncloud Cluster Management
 - engine.cpp
-- @immutable
+- How It Works
 - Backend Development Patterns
 - detect_project
 - _load_instincts_from_dir
@@ -206,7 +206,7 @@
 - Motion Foundations
 - MySQL Patterns
 - Plan Orchestrate
-- StatelessWidget
+- ../../app/theme/app_spacing.dart
 - X API
 - Plan - Multi-Model Collaborative Planning
 - AppDelegate
@@ -229,7 +229,7 @@
 - Agent Eval Skill
 - Agent Payment Execution (x402)
 - Observer Agent
-- cmd_evolve
+- How It Works
 - review-with-codex.js
 - Crosspost
 - How It Works
@@ -411,7 +411,7 @@
 - /marketing-campaign
 - Resume Session Command
 - Rust Code Review
-- performance_and_stress_test.dart
+- daily_use_readiness_test.dart
 - flutter-reviewer.md
 - Kotlin Build Error Resolver
 - PyTorch Build/Runtime Error Resolver
@@ -500,7 +500,7 @@
 - Rust Build and Fix
 - /skill-create - Local Skill Generation
 - MainActivity.kt
-- sonora_artwork.dart
+- SEO
 - Analysis Process
 - fastapi-reviewer.md
 - harness-optimizer.md
@@ -702,7 +702,7 @@
 - Dart/Flutter Hooks
 - Go Patterns
 - Python Coding Style
-- Python Patterns
+- ios_file_importer.dart
 - Python Testing
 - Low-Score Example: Adding Retry Logic
 - Side Effects with `effect` and `afterRenderEffect`
@@ -711,7 +711,7 @@
 - How It Works
 - Classes & Class Hierarchies (C.*)
 - DeepSeek Harness Setup
-- 5. Performance
+- React Performance
 - export-pdf.sh
 - Prediction Market Oracle Research
 - scan_dir_to_json
@@ -729,7 +729,7 @@
 - Agent Self-Evaluation Report Template
 - Dependent State with `linkedSignal`
 - Testing Fundamentals
-- playlist_detail_screen.dart
+- library_screen.dart
 - autonomy
 - Functions (F.*)
 - Resource Management (R.*)
@@ -788,7 +788,7 @@
 - review-pr.md
 - Token Card
 - analysis_options.yaml
-- settings_tile.dart
+- app_typography.dart
 - kotlin-hooks.md
 - session-guardian.sh
 - homunculus-dir.sh
@@ -799,7 +799,7 @@
 - Test Organization
 - Testing Exceptions
 - scan-rules.sh
-- AudioPlayerFacade
+- Common Patterns
 - evaluate-session.sh
 - migrate-homunculus.sh
 - gacha.sh script
@@ -816,17 +816,21 @@
 - LaunchImage.imageset/README.md
 - SonoraEngineOpaque
 - skill-comply
-- _cmd_projects_merge
+- 6. Testing
 - cmd_status
-- animated_sonora_wordmark.dart
-- module_audit.py
-- _update_registry
-- splash_screen_test.dart
+- SonoraThemeExtension
+- 7. Accessibility
+- 9. Security
+- 4. Client-Side Data Fetching (MEDIUM-HIGH)
 - Examples
-- equalizer_screen_test.dart
-- cmd_prune
-- dart:io
+- 8. Advanced Patterns (LOW)
+- 10. Package/Dependency Review
+- performance_and_stress_test.dart
 - patch_globals
+- 12. Error Handling
+- 13. Internationalization (l10n)
+- 15. Static Analysis
+- 8. Platform-Specific Concerns
 
 ## God Nodes (most connected - your core abstractions)
 1. `BiquadFilter` - 36 edges
@@ -838,7 +842,7 @@
 7. `_make_project()` - 28 edges
 8. `_load_instincts_from_dir()` - 25 edges
 9. `Examples` - 24 edges
-10. `Equalizer` - 22 edges
+10. `playerProvider` - 22 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Event System` --references--> `init()`  [INFERRED]
@@ -855,7 +859,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (826 total, 41 thin omitted)
+## Communities (830 total, 40 thin omitted)
 
 ### Community 0 - "app_database.dart"
 Cohesion: 0.03
@@ -863,11 +867,11 @@ Nodes (50): addTrackToPlaylist, batchInsertTracks, clearAllTracks, createPlaylis
 
 ### Community 1 - "library_providers.dart"
 Cohesion: 0.03
-Nodes (90): HomeScreen, LibraryAudioFilter, albumCount, albumsProvider, appDatabaseProvider, artistCount, artistsProvider, ascending (+82 more)
+Nodes (98): AppShell, build, build, HomeScreen, LibraryAudioFilter, albumCount, albumsProvider, appDatabaseProvider (+90 more)
 
 ### Community 2 - "audit-docs.py"
-Cohesion: 0.08
-Nodes (58): AxisScore, check_accuracy(), check_actionability(), check_clarity(), check_completeness(), check_conciseness(), _check_jargon(), _check_summary() (+50 more)
+Cohesion: 0.06
+Nodes (62): AxisScore, check_accuracy(), check_actionability(), check_clarity(), check_completeness(), check_conciseness(), _check_jargon(), _check_summary() (+54 more)
 
 ### Community 3 - "ffi_bindings.dart"
 Cohesion: 0.03
@@ -875,27 +879,27 @@ Nodes (73): computeFft, computeSpectrumBands, configureEqBand, createEngine, des
 
 ### Community 4 - "grade"
 Cohesion: 0.08
-Nodes (19): classify_events(), _check_temporal_order(), _demote_steps_resting_on_failures(), grade(), StepResult, ComplianceSpec, Detector, ObservationEvent (+11 more)
+Nodes (16): classify_events(), _check_temporal_order(), _demote_steps_resting_on_failures(), grade(), StepResult, ComplianceSpec, Detector, ObservationEvent (+8 more)
 
 ### Community 5 - "entities.dart"
-Cohesion: 0.05
-Nodes (40): album, albumArtist, albumCount, artist, artworkPath, bitDepth, bitrateKbps, copyWith (+32 more)
+Cohesion: 0.04
+Nodes (47): EqualizerBand, EqualizerPreset, album, albumArtist, albumCount, artist, artworkPath, AudioAlbum (+39 more)
 
 ### Community 6 - "lyrics_sheet.dart"
-Cohesion: 0.05
-Nodes (33): build, UiTrack, build, PlayerScreen, _showInspectorSheet, _showLyricsSheet, _showQueueSheet, playerProvider (+25 more)
+Cohesion: 0.07
+Nodes (23): _buildMasterNotesView, _buildMetaRow, createState, dispose, _findActiveIndex, _formatDuration, _generateOrParseLyrics, initState (+15 more)
 
 ### Community 8 - "shared.mjs"
 Cohesion: 0.07
 Nodes (47): contextDirPath, projects, rel, resolved, resolved, enriched, entries, projects (+39 more)
 
 ### Community 9 - "instinct-cli.py"
-Cohesion: 0.06
-Nodes (23): cmd_export(), cmd_import(), cmd_projects(), cmd_promote(), _ensure_global_dirs(), _fetch_import_url(), _frontmatter_scalar(), load_all_instincts() (+15 more)
+Cohesion: 0.05
+Nodes (32): _assign_unique_slugs(), _cluster_by_keyword_overlap(), cmd_evolve(), cmd_export(), cmd_import(), cmd_promote(), _collect_pending_dirs(), _collect_pending_instincts() (+24 more)
 
 ### Community 10 - "test_parse_instinct.py"
-Cohesion: 0.05
-Nodes (46): _normalize_remote_url(), parse_instinct_file(), _remove_project_storage(), _validate_file_path(), test_empty_content_no_error(), test_multiple_instincts_preserve_content(), test_normalize_remote_url_empty_returns_empty(), test_normalize_remote_url_file_scheme_preserves_case() (+38 more)
+Cohesion: 0.06
+Nodes (44): cmd_prune(), parse_instinct_file(), _update_registry(), _validate_file_path(), _pending_item(), test_cmd_prune_deletes_only_expired(), test_cmd_prune_dry_run_keeps_files(), test_cmd_prune_empty_pending_nothing_to_do() (+36 more)
 
 ### Community 11 - "app_spacing.dart"
 Cohesion: 0.04
@@ -903,11 +907,11 @@ Nodes (47): AppSpacing, cornerLg, cornerMd, cornerSm, cornerXl, cornerXs, curveD
 
 ### Community 12 - "player_state.dart"
 Cohesion: 0.04
-Nodes (43): addToQueue, audioHandlerProvider, audioPlayerFacadeProvider, bufferedPosition, build, clearQueue, copyWith, currentTrack (+35 more)
+Nodes (47): addToQueue, audioPlayerFacadeProvider, bufferedPosition, build, clearPlaybackError, clearQueue, copyWith, currentTrack (+39 more)
 
 ### Community 13 - "runner.py"
-Cohesion: 0.10
-Nodes (14): _archive_member_safe(), _archive_operands(), _archive_safe(), _arg_stays_in_sandbox(), _attached_values(), _extracted_archives_safe(), _packages_allowed(), _path_stays_in_sandbox() (+6 more)
+Cohesion: 0.05
+Nodes (24): _write_text_atomic(), check_disk(), check_stale_libs(), count_edits(), get_project_memory_dir(), main(), extract_pptx(), _archive_member_safe() (+16 more)
 
 ### Community 14 - "Python Development Patterns"
 Cohesion: 0.04
@@ -922,8 +926,8 @@ Cohesion: 0.04
 Nodes (47): 1. Tests BEFORE Code, 2. Coverage Requirements, 3. Test Types, 4. Git Checkpoints, API Integration Test Pattern, Best Practices, Bun Native Test Pattern (`bun:test`), CI/CD Integration (+39 more)
 
 ### Community 17 - "package:flutter/material.dart"
-Cohesion: 0.06
-Nodes (32): AppShell, build, navigationShell, _onDestinationSelected, ThemeModeNotifier, settingsProvider, badgeText, createState (+24 more)
+Cohesion: 0.04
+Nodes (28): navigationShell, _onDestinationSelected, _getAccentDescription, audioHandler, main, widgetsBinding, isIosImport, messenger (+20 more)
 
 ### Community 18 - "Autonomous Loops Skill"
 Cohesion: 0.04
@@ -942,20 +946,20 @@ Cohesion: 0.07
 Nodes (18): accentGlow, accentGold, accentGradient, AppTheme, backgroundGradient, buildDarkTheme, buildLightTheme, cardGradient (+10 more)
 
 ### Community 22 - "waveform_progress_bar.dart"
-Cohesion: 0.05
-Nodes (38): accentColor, barCount, build, _controller, createState, _currentHeights, _decayToRest, didUpdateWidget (+30 more)
+Cohesion: 0.06
+Nodes (34): accentColor, barCount, build, _controller, createState, _currentHeights, _decayToRest, didUpdateWidget (+26 more)
 
 ### Community 23 - "app_colors.dart"
 Cohesion: 0.04
 Nodes (43): AppColors, champagneGradient, darkAccent, darkAccentGlow, darkAccentGold, darkAccentGradient, darkAccentLight, darkBackground (+35 more)
 
 ### Community 24 - "Flutter/Dart Code Review Best Practices"
-Cohesion: 0.05
-Nodes (43): 10. Package/Dependency Review, 11. Navigation and Routing, 12. Error Handling, 13. Internationalization (l10n), 14. Dependency Injection, 15. Static Analysis, 1. General Project Health, 2. Dart Language Pitfalls (+35 more)
+Cohesion: 0.20
+Nodes (9): 11. Navigation and Routing, 14. Dependency Injection, 1. General Project Health, 2. Dart Language Pitfalls, Flutter/Dart Code Review Best Practices, General principles (apply to any routing solution):, Principles (apply to any DI approach):, Sources (+1 more)
 
 ### Community 25 - "android_media_scanner.dart"
-Cohesion: 0.06
-Nodes (29): album, albumArtist, AndroidMediaScanner, artist, artworkCacheService, artworkPath, bitDepth, bitrateKbps (+21 more)
+Cohesion: 0.04
+Nodes (46): album, albumArtist, albumFromStore, artist, artistFromStore, artworkBytes, artworkCacheService, artworkPath (+38 more)
 
 ### Community 26 - "BiquadFilter"
 Cohesion: 0.05
@@ -993,9 +997,9 @@ Nodes (33): album, albumArtist, artist, artworkPath, bitDepth, bitrateKbps, crea
 Cohesion: 0.05
 Nodes (38): _bufferedPosition, _bufferedPositionController, bufferedPositionStream, _bufferingController, _completedController, dispose, _duration, _durationController (+30 more)
 
-### Community 35 - "load_registry"
-Cohesion: 0.14
-Nodes (9): _find_cross_project_instincts(), load_registry(), test_find_cross_project_empty_registry(), test_find_cross_project_shared_instinct(), test_find_cross_project_single_project(), test_load_registry_corrupt_json(), test_load_registry_missing_file(), test_load_registry_uses_utf8_encoding() (+1 more)
+### Community 35 - "MonkeyPatch"
+Cohesion: 0.19
+Nodes (5): _parse_stream_json(), _directory_symlink(), TestDirectorySymlinkFixture, TestParseStreamJsonRedactsHomePath, TestSandboxBaseBoundary
 
 ### Community 36 - "Quarkus Verification Loop"
 Cohesion: 0.05
@@ -1013,9 +1017,9 @@ Nodes (23): Equalizer, bands_, channels_, enabled_, Equalizer::Equalizer(), samp
 Cohesion: 0.05
 Nodes (38): API Design Checklist, API Design Patterns, Authentication and Authorization, Authorization Patterns, Collection Response (with Pagination), Common Mistakes, Cursor-Based (Scalable), Error Response (+30 more)
 
-### Community 40 - "json"
-Cohesion: 0.16
-Nodes (6): check_disk(), check_stale_libs(), count_edits(), get_project_memory_dir(), main(), extract_pptx()
+### Community 40 - "_promote_auto"
+Cohesion: 0.11
+Nodes (10): _frontmatter_scalar(), _promote_auto(), _remove_instinct_blocks(), _remove_instinct_from_source(), _validate_instinct_id(), test_promote_auto_dry_run(), test_promote_auto_no_candidates(), test_promote_auto_skips_invalid_id() (+2 more)
 
 ### Community 41 - "dependencies"
 Cohesion: 0.05
@@ -1042,20 +1046,20 @@ Cohesion: 0.16
 Nodes (36): acquireLock(), allocate(), apply(), assertNoSymlinkDirs(), breakStaleLock(), describeError(), { execFileSync }, field() (+28 more)
 
 ### Community 47 - "i18n Sync"
-Cohesion: 0.05
-Nodes (35): 1. Establish the worklist, 2. Gather usage context, 3. Translate with project tone, 4. Prepare, apply, and validate the patch, 5. Report, Hook Integration, i18n Sync, Optional Locakit Reports (+27 more)
+Cohesion: 0.15
+Nodes (13): 1. Establish the worklist, 2. Gather usage context, 3. Translate with project tone, 4. Prepare, apply, and validate the patch, 5. Report, Hook Integration, i18n Sync, Optional Locakit Reports (+5 more)
 
 ### Community 48 - "Rust Development Patterns"
 Cohesion: 0.05
 Nodes (36): 1. Ownership and Borrowing, Accept Generics, Return Concrete Types, Anti-Patterns to Avoid, `Arc<Mutex<T>>` for Shared Mutable State, Async with Tokio, Builder Pattern for Complex Construction, Channels for Message Passing, Concurrency (+28 more)
 
 ### Community 49 - "Path"
-Cohesion: 0.08
-Nodes (13): _parse_stream_json(), _safe_sandbox_dir(), _sandboxed_setup_command(), _directory_symlink(), _run_setup(), TestArchiveMembers, TestDirectorySymlinkFixture, TestParseStreamJsonRedactsHomePath (+5 more)
+Cohesion: 0.12
+Nodes (6): _sandboxed_setup_command(), _run_setup(), TestArchiveMembers, TestSandboxBaseOwnership, TestSetupCommandConfinement, TestUnzipArchiveBinding
 
 ### Community 50 - "build-agreement.js"
-Cohesion: 0.08
-Nodes (34): Accessibility (MEDIUM), Architecture (CRITICAL), Dart Idioms (MEDIUM), Dependencies & Build (LOW), Error Handling (HIGH), Internationalization (MEDIUM), Performance (HIGH), Platform, Responsive & Navigation (MEDIUM) (+26 more)
+Cohesion: 0.06
+Nodes (40): Accessibility (MEDIUM), Architecture (CRITICAL), Dart Idioms (MEDIUM), Dependencies & Build (LOW), Error Handling (HIGH), Internationalization (MEDIUM), Performance (HIGH), Platform, Responsive & Navigation (MEDIUM) (+32 more)
 
 ### Community 51 - "Django Security Best Practices"
 Cohesion: 0.06
@@ -1070,12 +1074,12 @@ Cohesion: 0.06
 Nodes (34): Acceptable vs unacceptable callbacks, Anti-Patterns, Background job shape, Background jobs, Best Practices, Callback chains, Code Examples, Core Concepts (+26 more)
 
 ### Community 54 - "ConsumerWidget"
-Cohesion: 0.14
-Nodes (10): build, setThemeMode, SonoraApp, themeModeProvider, routerProvider, themeAccentProvider, build, SettingsScreen (+2 more)
+Cohesion: 0.07
+Nodes (26): build, _hasUserOverride, _hydrate, _prefKey, setThemeMode, SonoraApp, themeModeProvider, routerProvider (+18 more)
 
 ### Community 55 - "artwork_cache_service.dart"
-Cohesion: 0.07
-Nodes (17): ArtworkCacheService, clearCache, customCacheDir, defaultMaxDiskBytes, getCachedArtworkPath, getDiskUsage, hashKey, maxMemoryEntries (+9 more)
+Cohesion: 0.08
+Nodes (19): AppPreferencesService, _fileName, loadAll, parseAccent, parseThemeMode, _prefsFile, serializeThemeMode, updateKey (+11 more)
 
 ### Community 56 - "Agentic OS"
 Cohesion: 0.06
@@ -1094,8 +1098,8 @@ Cohesion: 0.06
 Nodes (33): 1. IAM & Access Control, 2. Secrets Management, 3. Network Security, 4. Logging & Monitoring, 5. CI/CD Pipeline Security, 6. Cloudflare & CDN Security, 7. Backup & Disaster Recovery, Automated Backups (+25 more)
 
 ### Community 60 - "sonora_audio_handler.dart"
-Cohesion: 0.05
-Nodes (31): _audioSessionInitialized, BaseAudioHandler, _broadcastState, disposeHandler, _durationSubscription, initAudioSession, _initStreams, _interruptionSubscription (+23 more)
+Cohesion: 0.04
+Nodes (40): _audioSessionInitialized, BaseAudioHandler, _broadcastState, disposeHandler, _durationSubscription, handleAudioInterruption, initAudioSession, _initStreams (+32 more)
 
 ### Community 61 - "ClickHouse Analytics Patterns"
 Cohesion: 0.06
@@ -1150,8 +1154,8 @@ Cohesion: 0.06
 Nodes (31): Archive Plan, Branch Decision, Build Fails, Create Implementation Report, Git State, Handling Deviations, Handling Failures, Integration Test Fails (+23 more)
 
 ### Community 74 - "_make_project"
-Cohesion: 0.06
-Nodes (26): _cmd_projects_delete(), _cmd_projects_gc(), _project_counts(), _validate_project_id(), _make_project(), test_cmd_projects_with_registry(), test_load_all_empty(), test_load_all_project_and_global() (+18 more)
+Cohesion: 0.05
+Nodes (41): _append_observations(), cmd_projects(), _cmd_projects_delete(), _cmd_projects_gc(), _cmd_projects_merge(), load_registry(), _project_counts(), _promote_specific() (+33 more)
 
 ### Community 75 - "Django Testing with TDD"
 Cohesion: 0.06
@@ -1179,7 +1183,7 @@ Nodes (30): Anti-Patterns, Cache-Aside (Lazy Loading), Cache Invalidation, Cache
 
 ### Community 81 - "drift_library_repository.dart"
 Cohesion: 0.06
-Nodes (26): addTrackToPlaylist, androidScanner, createPlaylist, database, deletePlaylist, deleteTrack, getAlbums, getArtists (+18 more)
+Nodes (27): AndroidMediaScanner, addTrackToPlaylist, androidScanner, createPlaylist, database, deletePlaylist, deleteTrack, getAlbums (+19 more)
 
 ### Community 82 - "Bengali (Bangla) NLP Patterns"
 Cohesion: 0.07
@@ -1214,8 +1218,8 @@ Cohesion: 0.07
 Nodes (28): Avoiding Hook Conflicts, CI Integration Pattern, Complementary, Not Overlapping, Config Protection (Defense Against Rule-Gaming), Config Tamper Guard, Configuration Reference, Copyable Hook Profile, ECC v1.8 Additions (+20 more)
 
 ### Community 90 - "equalizer_providers.dart"
-Cohesion: 0.07
-Nodes (28): activePreset, applyPreset, bandCount, bands, bassEnhancement, build, calculateResponseAt, copyWith (+20 more)
+Cohesion: 0.05
+Nodes (39): activePreset, applyPreset, bandCount, bands, bassEnhancement, build, calculateResponseAt, copyWith (+31 more)
 
 ### Community 91 - "Signal Forms"
 Cohesion: 0.07
@@ -1241,21 +1245,21 @@ Nodes (27): Centralised Exception Handling, Code Smells to Avoid, Configuration,
 Cohesion: 0.07
 Nodes (27): API Resources, Caching, Configuration and Environments, Controllers -> Services -> Actions, Custom Casts and Value Objects, Eager Loading to Avoid N+1, Eloquent Model Patterns, Events, Jobs, and Queues (+19 more)
 
-### Community 97 - "React Performance"
-Cohesion: 0.07
-Nodes (28): 3. Server-Side Performance (HIGH), 4. Client-Side Data Fetching (MEDIUM-HIGH), 7. JavaScript Performance (LOW-MEDIUM), 8. Advanced Patterns (LOW), Attribution, Authenticate Server Actions like API routes, Automated Tools, Avoid duplicate serialization in RSC props (+20 more)
+### Community 97 - "3. Server-Side Performance (HIGH)"
+Cohesion: 0.20
+Nodes (10): 3. Server-Side Performance (HIGH), Authenticate Server Actions like API routes, Avoid duplicate serialization in RSC props, Hoist static I/O to module scope, LRU cache for cross-request data, Minimize data passed to Client Components, No mutable module-level state in RSC/SSR, Parallelize nested fetches with Promise.all per item (+2 more)
 
 ### Community 98 - "macos_ambient_backdrop.dart"
 Cohesion: 0.07
 Nodes (26): _amberStops, _baseCharcoal, _basePaint, _blobPointCount, _blobPoints, _blobStops, build, _deepVignette (+18 more)
 
 ### Community 99 - "search_screen.dart"
-Cohesion: 0.09
-Nodes (25): searchQueryProvider, searchResultsProvider, LibraryScreen, libraryEmptyStateProvider, PlaylistDetailScreen, _applyRecentSearch, build, _clearSearch (+17 more)
+Cohesion: 0.10
+Nodes (21): searchQueryProvider, searchResultsProvider, _applyRecentSearch, build, _clearSearch, color, createState, dispose (+13 more)
 
-### Community 100 - "equalizer_screen.dart"
-Cohesion: 0.08
-Nodes (19): equalizerProvider, band, build, createState, _customPresetController, dispose, EqualizerScreen, _EqualizerScreenState (+11 more)
+### Community 100 - "load_all_instincts"
+Cohesion: 0.12
+Nodes (8): load_all_instincts(), load_project_only_instincts(), test_load_all_empty(), test_load_all_global_only(), test_load_all_project_and_global(), test_load_all_project_overrides_global(), test_load_project_only_excludes_global(), test_load_project_only_global_fallback_loads_global()
 
 ### Community 101 - "Carrier Relationship Management"
 Cohesion: 0.07
@@ -1274,8 +1278,8 @@ Cohesion: 0.07
 Nodes (26): Accordion, AnimatePresence contract, Anti-Patterns, Button feedback, Choosing the right pattern, Code Examples, Constraints / Non-Goals, Core Concepts (+18 more)
 
 ### Community 105 - "approval_claims.py"
-Cohesion: 0.07
-Nodes (30): main(), pick(), begin_dispatch(), cancel(), claim(), _claim_row(), ClaimError, complete() (+22 more)
+Cohesion: 0.12
+Nodes (15): main(), pick(), begin_dispatch(), cancel(), claim(), _claim_row(), ClaimError, complete() (+7 more)
 
 ### Community 106 - "Production Scheduling"
 Cohesion: 0.07
@@ -1297,21 +1301,21 @@ Nodes (26): Caddy, CLI Quick Reference, Common Mistakes, Common Workflows, Compo
 Cohesion: 0.15
 Nodes (7): SonoraEngine, SonoraEngine, SonoraEngine, WaveformExtractor, sonora_analysis_compute_fft(), sonora_analysis_compute_spectrum_bands(), test_fft_analysis()
 
-### Community 111 - "@immutable"
-Cohesion: 0.29
-Nodes (6): EqualizerBand, EqualizerPreset, AudioAlbum, AudioArtist, AudioPlaylist, AudioTrack
+### Community 111 - "How It Works"
+Cohesion: 0.12
+Nodes (15): Baseline gate, Deciding, Delivery footer in an internal channel, Examples, File a draft, Filing a draft, Gate refusal, How It Works (+7 more)
 
 ### Community 112 - "Backend Development Patterns"
 Cohesion: 0.08
 Nodes (25): API Design Patterns, Authentication & Authorization, Backend Development Patterns, Background Jobs & Queues, Cache-Aside Pattern, Caching Strategies, Centralized Error Handler, Database Patterns (+17 more)
 
 ### Community 113 - "detect_project"
-Cohesion: 0.13
-Nodes (9): detect_project(), _git_repo_root(), _main_worktree_root(), _strip_remote_credentials(), test_detect_project_creates_directories(), test_detect_project_from_env(), test_detect_project_git_timeout(), test_detect_project_global_fallback() (+1 more)
+Cohesion: 0.09
+Nodes (17): detect_project(), _git_repo_root(), _main_worktree_root(), _normalize_remote_url(), _strip_remote_credentials(), test_detect_project_creates_directories(), test_detect_project_from_env(), test_detect_project_git_timeout() (+9 more)
 
 ### Community 114 - "_load_instincts_from_dir"
-Cohesion: 0.12
-Nodes (11): _load_instincts_from_dir(), test_load_annotates_metadata(), test_load_defaults_scope_from_label(), test_load_from_empty_dir(), test_load_from_nonexistent_dir(), test_load_handles_corrupt_file(), test_load_instinct_file_with_utf8_bom(), test_load_instincts_from_dir_uses_utf8_encoding() (+3 more)
+Cohesion: 0.07
+Nodes (18): _find_cross_project_instincts(), _load_instincts_from_dir(), _project_instinct_ids(), _resolve_homunculus_dir(), _show_promotion_candidates(), test_find_cross_project_empty_registry(), test_find_cross_project_shared_instinct(), test_find_cross_project_single_project() (+10 more)
 
 ### Community 115 - "Dart/Flutter Patterns"
 Cohesion: 0.08
@@ -1338,12 +1342,12 @@ Cohesion: 0.08
 Nodes (25): Assertions, Best Practices, Camel Route Testing, Coverage with JaCoCo, Event-Driven Testing, Integration Tests with Real Database, Key Testing Patterns, Maven Configuration (Complete) (+17 more)
 
 ### Community 121 - "parse_spec"
-Cohesion: 0.16
-Nodes (4): parse_spec(), parse_trace(), TestParseSpec, TestParseTrace
+Cohesion: 0.13
+Nodes (7): parse_spec(), parse_trace(), compliant_trace(), noncompliant_trace(), tdd_spec(), TestParseSpec, TestParseTrace
 
 ### Community 122 - "personalization_and_smart_library_test.dart"
-Cohesion: 0.09
-Nodes (11): AppDatabase, DriftLibraryRepository, MusicLibraryRepository, db, main, db, main, repo (+3 more)
+Cohesion: 0.10
+Nodes (10): AppDatabase, DriftLibraryRepository, MusicLibraryRepository, db, main, db, main, repo (+2 more)
 
 ### Community 123 - "Jira Integration Skill"
 Cohesion: 0.08
@@ -1459,7 +1463,7 @@ Nodes (22): AI/LLM Integration, Anti-Patterns, Content & Publishing, Data & APIs
 
 ### Community 151 - "_FakeScenario"
 Cohesion: 0.11
-Nodes (6): _setup_sandbox(), _FakeScenario, TestRunScenarioErrorIncludesStdoutTail, TestRunScenarioMaxTurnsTermination, TestSetupSandboxSkipsShellBuiltins, fake_run()
+Nodes (5): _FakeScenario, TestRunScenarioErrorIncludesStdoutTail, TestRunScenarioMaxTurnsTermination, TestSetupSandboxSkipsShellBuiltins, fake_run()
 
 ### Community 152 - "tinystruct-patterns/SKILL.md"
 Cohesion: 0.09
@@ -1506,12 +1510,12 @@ Cohesion: 0.09
 Nodes (21): 0. Bootstrap (run once per project), 1. create-epic, 2. create-stories, 3. plan-sprint, 4. implement, 5. status, Anti-Patterns, Authority (+13 more)
 
 ### Community 163 - "audio_metadata_service.dart"
-Cohesion: 0.09
-Nodes (18): album, albumArtist, artist, artworkBytes, bitDepth, bitrateKbps, discNumber, duration (+10 more)
+Cohesion: 0.07
+Nodes (20): album, albumArtist, artist, artworkBytes, bitDepth, bitrateKbps, discNumber, duration (+12 more)
 
 ### Community 164 - "settings_providers.dart"
-Cohesion: 0.10
-Nodes (20): bitPerfectOutput, build, copyWith, crossfadeSeconds, gaplessPlayback, highResDirectDac, lockScreenArtwork, pauseOnDisconnect (+12 more)
+Cohesion: 0.09
+Nodes (23): bitPerfectOutput, build, copyWith, crossfadeSeconds, gaplessPlayback, _hasPauseOnDisconnectOverride, highResDirectDac, _hydrate (+15 more)
 
 ### Community 165 - "Java Build Error Resolver"
 Cohesion: 0.10
@@ -1554,8 +1558,8 @@ Cohesion: 0.10
 Nodes (20): Ambiguity Gate, Codebase Analysis (5 Traces), Codebase Search (8 Categories), Complexity Assessment, Feature Understanding, Interaction Changes, Phase 0 — DETECT, Phase 1 — PARSE (+12 more)
 
 ### Community 175 - "audio_player_facade.dart"
-Cohesion: 0.10
-Nodes (16): bufferedPositionStream, dispose, duration, durationStream, isBufferingStream, isPlaying, isPlayingStream, load (+8 more)
+Cohesion: 0.08
+Nodes (20): FakeAudioPlayerFacade, JustAudioPlayerFacade, AudioPlayerFacade, bufferedPositionStream, dispose, duration, durationStream, isBufferingStream (+12 more)
 
 ### Community 176 - "code-reviewer.md"
 Cohesion: 0.10
@@ -1613,9 +1617,9 @@ Nodes (19): Activation, Anti-Patterns, Configuration, Connection Pools, Diagnost
 Cohesion: 0.10
 Nodes (19): Command catalogue, Edge cases, Example 1 — Feature step with security and DB concerns (emitted), Example 2 — Fix step (emitted), Example 3 — Test step (fails closed), Examples, How It Works, Inputs (+11 more)
 
-### Community 190 - "StatelessWidget"
-Cohesion: 0.05
-Nodes (31): _EqualizerSliderColumn, FrequencyResponseGraph, _PlaylistCard, _CategoryCard, AboutSettingsScreen, PrivacyPermissionsSettingsScreen, AnimatedSonoraWordmark, MacosAmbientBackdrop (+23 more)
+### Community 190 - "../../app/theme/app_spacing.dart"
+Cohesion: 0.04
+Nodes (51): _EqualizerSliderColumn, FrequencyResponseGraph, _PlaylistCard, _CategoryCard, settingsProvider, AboutSettingsScreen, build, _handleRescan (+43 more)
 
 ### Community 191 - "X API"
 Cohesion: 0.10
@@ -1705,9 +1709,9 @@ Nodes (17): Agent Payment Execution (x402), Available Tools (agent-callable), Be
 Cohesion: 0.11
 Nodes (17): 1. User Corrections, 2. Error Resolutions, 3. Repeated Workflows, 4. Tool Preferences, Confidence Calculation, Example Analysis Session, Global Instinct (universal patterns), Important Guidelines (+9 more)
 
-### Community 213 - "cmd_evolve"
-Cohesion: 0.10
-Nodes (12): _assign_unique_slugs(), _cluster_by_keyword_overlap(), cmd_evolve(), _evolved_agent_name(), _evolved_command_name(), _evolved_description(), _evolved_skill_name(), _generate_evolved() (+4 more)
+### Community 213 - "How It Works"
+Cohesion: 0.15
+Nodes (13): Crawlability, Heading structure, How It Works, Indexability, Internal linking, Keyword mapping, Meta descriptions, On-page rules (+5 more)
 
 ### Community 214 - "review-with-codex.js"
 Cohesion: 0.18
@@ -1830,8 +1834,8 @@ Cohesion: 0.12
 Nodes (16): 1. Master Phase Matrix, 2. Completed Phase Details, 3. Remaining Roadmap & Objectives, 3. Remaining Roadmap & Objectives, 4. Known Limitations & Outstanding Hardware QA, 5. Architectural Decision Records (ADR) Log, Phase 01 to Phase 04 Summary, Phase 05: Background Playback & System Media Controls (+8 more)
 
 ### Community 244 - "frequency_response_graph.dart"
-Cohesion: 0.09
-Nodes (20): accentColor, baselineColor, build, _dbToY, _freqToX, _FrequencyResponsePainter, gridColor, height (+12 more)
+Cohesion: 0.04
+Nodes (41): accentColor, baselineColor, build, _dbToY, _freqToX, _FrequencyResponsePainter, gridColor, height (+33 more)
 
 ### Community 245 - "bengali-reviewer.md"
 Cohesion: 0.12
@@ -1910,7 +1914,7 @@ Cohesion: 0.12
 Nodes (15): Anti-Patterns, Batch Writes, Dynamic SQL, Examples, How It Works, MyBatis Patterns, Pagination and Large Reads, Parameter Binding and SQL Safety (+7 more)
 
 ### Community 264 - "equalizer_preset.dart"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (16): builtInPresets, copyWith, fiveBandGains, frequency, gain, hashCode, index, isBuiltIn (+8 more)
 
 ### Community 265 - "How It Works"
@@ -2086,8 +2090,8 @@ Cohesion: 0.13
 Nodes (14): Async Tests, Coverage Commands, Coverage Targets, Example Session, Parameterized Tests with rstest, Property-Based Tests, Related, Related Commands (+6 more)
 
 ### Community 308 - "app_constants.dart"
-Cohesion: 0.12
-Nodes (11): AppTypography, _buildTextTheme, createDarkTextTheme, createLightTextTheme, fontFamily, AppConstants, appName, appTagline (+3 more)
+Cohesion: 0.22
+Nodes (6): AppConstants, appName, appTagline, databaseName, databaseSchemaVersion, supportedAudioExtensions
 
 ### Community 309 - "SONORA — Technical Architecture Specification"
 Cohesion: 0.13
@@ -2266,8 +2270,8 @@ Cohesion: 0.15
 Nodes (13): Angular Testing, Async Testing, Component Harnesses, Coverage, E2E Testing, HTTP Testing, Router Testing, Service Testing (+5 more)
 
 ### Community 353 - "common-patterns.md"
-Cohesion: 0.19
-Nodes (9): API Response Format, Common Patterns, Design Patterns, Repository Pattern, Skeleton Projects, API Response Format, Custom Hooks Pattern, Repository Pattern (+1 more)
+Cohesion: 0.18
+Nodes (9): Context Managers & Generators, Dataclasses as DTOs, Protocol (Duck Typing), Python Patterns, Reference, API Response Format, Custom Hooks Pattern, Repository Pattern (+1 more)
 
 ### Community 354 - "React Hooks"
 Cohesion: 0.15
@@ -2433,9 +2437,9 @@ Nodes (12): Candidate ranking for implicit and date-based lookup, Edge Cases, Ex
 Cohesion: 0.15
 Nodes (12): Approval Criteria, Automated Checks Run, CRITICAL (Must Fix), Example Usage, HIGH (Should Fix), Integration with Other Commands, MEDIUM (Consider), Related (+4 more)
 
-### Community 395 - "performance_and_stress_test.dart"
-Cohesion: 0.12
-Nodes (10): main, main, main, cacheService, main, tempTestDir, main, track1 (+2 more)
+### Community 395 - "daily_use_readiness_test.dart"
+Cohesion: 0.07
+Nodes (17): main, load, loadDelays, localTrackA, localTrackB, localTrackC, main, play (+9 more)
 
 ### Community 396 - "flutter-reviewer.md"
 Cohesion: 0.17
@@ -2742,8 +2746,8 @@ Cohesion: 0.18
 Nodes (10): Actor-Based Repository, Anti-Patterns to Avoid, Best Practices, Combining with @Observable ViewModel, Core Pattern, Key Design Decisions, Swift Actors for Thread-Safe Persistence, Usage (+2 more)
 
 ### Community 472 - "waveform_progress_bar.dart"
-Cohesion: 0.09
-Nodes (22): barCount, build, createState, didUpdateWidget, _dragProgress, duration, _generatePeaks, _handleDrag (+14 more)
+Cohesion: 0.05
+Nodes (35): ThemeModeNotifier, barCount, build, createState, didUpdateWidget, _dragProgress, duration, _generatePeaks (+27 more)
 
 ### Community 473 - "Aside Command"
 Cohesion: 0.18
@@ -2785,9 +2789,9 @@ Nodes (10): Common Errors Fixed, Diagnostic Commands Run, Example Session, Fix S
 Cohesion: 0.18
 Nodes (10): Analysis Steps, GitHub App Integration, Related Commands, /skill-create - Local Skill Generation, Step 1: Gather Git Data, Step 2: Detect Patterns, Step 3: Generate SKILL.md, Step 4: Generate Instincts (if --instincts) (+2 more)
 
-### Community 484 - "sonora_artwork.dart"
-Cohesion: 0.08
-Nodes (22): accentColor, accentGlow, accentGold, accentLight, build, id, name, setAccent (+14 more)
+### Community 484 - "SEO"
+Cohesion: 0.18
+Nodes (9): Anti-Patterns, Audit output shape, Examples, JSON-LD example, Meta description formula, Related Skills, SEO, Title formula (+1 more)
 
 ### Community 485 - "Analysis Process"
 Cohesion: 0.20
@@ -3558,8 +3562,8 @@ Cohesion: 0.29
 Nodes (6): Implementation, Panels, Skill Health Dashboard, Snapshot storage, Usage, What to Do
 
 ### Community 678 - "SONORA"
-Cohesion: 0.29
-Nodes (6): Architecture & Technology Stack, Getting Started, Prerequisites, SONORA, Technical Specifications & Known Limitations, Verification Commands
+Cohesion: 0.17
+Nodes (11): Android Daily-Use Guide (Redmi Note 11), Architecture & Technology Stack, Audio Format Support Matrix, Building & Installing the Debug APK, Getting Started, Permissions & Music Library Scan, Prerequisites, SONORA (+3 more)
 
 ### Community 679 - "homelab-architect.md"
 Cohesion: 0.33
@@ -3589,9 +3593,9 @@ Nodes (5): Dependency Injection, Functional Options, Go Patterns, Reference, Sma
 Cohesion: 0.33
 Nodes (5): Formatting, Immutability, Python Coding Style, Reference, Standards
 
-### Community 686 - "Python Patterns"
-Cohesion: 0.33
-Nodes (5): Context Managers & Generators, Dataclasses as DTOs, Protocol (Duck Typing), Python Patterns, Reference
+### Community 686 - "ios_file_importer.dart"
+Cohesion: 0.18
+Nodes (5): AudioMetadataService, artworkCacheService, IosFileImporter, metadataService, pickAndImportAudioFiles
 
 ### Community 687 - "Python Testing"
 Cohesion: 0.33
@@ -3625,9 +3629,9 @@ Nodes (6): Anti-Patterns, Class Hierarchy, Classes & Class Hierarchies (C.*), Ke
 Cohesion: 0.33
 Nodes (5): DeepSeek Harness Setup, How It Works, Limits, Updating, When to Use
 
-### Community 695 - "5. Performance"
-Cohesion: 0.33
-Nodes (6): 5. Performance, Expensive operations in build():, Image optimization:, Lazy loading:, Other:, Unnecessary rebuilds:
+### Community 695 - "React Performance"
+Cohesion: 0.25
+Nodes (8): 7. JavaScript Performance (LOW-MEDIUM), Attribution, Automated Tools, Lighthouse / Web Vitals Mapping, Priority Index, React Performance, Related, When to Activate
 
 ### Community 696 - "export-pdf.sh"
 Cohesion: 0.53
@@ -3697,9 +3701,9 @@ Nodes (4): Advanced Usage: Accounting for Previous State, Basic Usage, Dependent
 Cohesion: 0.40
 Nodes (4): Basic Test Structure Example, Core Philosophy: Async-First, TestBed and ComponentFixture, Testing Fundamentals
 
-### Community 713 - "playlist_detail_screen.dart"
-Cohesion: 0.10
-Nodes (14): accentColor, countText, _handleScanImport, icon, onTap, title, _buildHeader, createState (+6 more)
+### Community 713 - "library_screen.dart"
+Cohesion: 0.04
+Nodes (34): accentColor, countText, _handleScanImport, icon, onTap, title, createState, dispose (+26 more)
 
 ### Community 714 - "autonomy"
 Cohesion: 0.40
@@ -3933,9 +3937,9 @@ Nodes (3): Token Card, Usage, What it does
 Cohesion: 0.50
 Nodes (3): include, linter, rules
 
-### Community 772 - "settings_tile.dart"
-Cohesion: 0.09
-Nodes (17): accentColor, filter, icon, id, label, matches, name, SmartPlaylistType (+9 more)
+### Community 772 - "app_typography.dart"
+Cohesion: 0.25
+Nodes (5): AppTypography, _buildTextTheme, createDarkTextTheme, createLightTextTheme, fontFamily
 
 ### Community 776 - "对话语气指南"
 Cohesion: 0.67
@@ -3961,61 +3965,81 @@ Nodes (3): Directory Structure, Test Classes, Test Organization
 Cohesion: 0.67
 Nodes (3): Testing Exception Attributes, Testing Exceptions, Testing Expected Exceptions
 
-### Community 783 - "AudioPlayerFacade"
-Cohesion: 0.67
-Nodes (3): FakeAudioPlayerFacade, JustAudioPlayerFacade, AudioPlayerFacade
+### Community 783 - "Common Patterns"
+Cohesion: 0.40
+Nodes (5): API Response Format, Common Patterns, Design Patterns, Repository Pattern, Skeleton Projects
 
-### Community 811 - "_cmd_projects_merge"
-Cohesion: 0.12
-Nodes (14): _append_observations(), _cmd_projects_merge(), _collect_pending_dirs(), _collect_pending_instincts(), _merge_instinct_dir(), _parse_created_date(), _project_hash(), _project_instinct_ids() (+6 more)
+### Community 811 - "6. Testing"
+Cohesion: 0.40
+Nodes (5): 6. Testing, Coverage targets:, Test isolation:, Test types and expectations:, Widget test quality:
 
 ### Community 812 - "cmd_status"
-Cohesion: 0.11
-Nodes (11): cmd_status(), _confidence_bar(), _print_instincts_by_domain(), _stream_can_encode(), _warn_legacy_data(), test_cmd_status_handles_nonfinite_confidence(), test_cmd_status_no_instincts(), test_cmd_status_returns_int() (+3 more)
+Cohesion: 0.20
+Nodes (5): cmd_status(), _warn_legacy_data(), test_cmd_status_no_instincts(), test_cmd_status_returns_int(), test_cmd_status_with_instincts()
 
-### Community 815 - "animated_sonora_wordmark.dart"
-Cohesion: 0.11
-Nodes (9): SonoraThemeExtension, build, letterProgresses, letters, spacingProgress, taglineProgress, taglineText, timeline (+1 more)
+### Community 816 - "7. Accessibility"
+Cohesion: 0.40
+Nodes (5): 7. Accessibility, Interaction accessibility:, Screen reader support:, Semantic widgets:, Visual accessibility:
 
-### Community 816 - "module_audit.py"
-Cohesion: 0.15
-Nodes (4): AuditReport, carrier_candidates(), check_modules(), LinkChecker
+### Community 817 - "9. Security"
+Cohesion: 0.40
+Nodes (5): 9. Security, API key handling:, Input validation:, Network security:, Secure storage:
 
-### Community 817 - "_update_registry"
-Cohesion: 0.17
-Nodes (9): _registry_lock(), _update_registry(), _write_registry(), test_update_registry_atomic_replaces_file(), test_update_registry_heals_malformed_entry(), test_update_registry_heals_non_dict_registry(), test_update_registry_matches_shell_schema(), test_update_registry_preserves_created_at() (+1 more)
-
-### Community 818 - "splash_screen_test.dart"
-Cohesion: 0.17
-Nodes (4): buildTestRouter, buildTestSplash, fadeOpacityOf, main
+### Community 818 - "4. Client-Side Data Fetching (MEDIUM-HIGH)"
+Cohesion: 0.40
+Nodes (5): 4. Client-Side Data Fetching (MEDIUM-HIGH), Deduplicate global event listeners, localStorage: version + minimize, Passive listeners for scroll, SWR / TanStack Query for deduplication
 
 ### Community 819 - "Examples"
 Cohesion: 0.18
 Nodes (10): Basic Action Declaration, Dependency Injection, Examples, How It Works, Mode Values, Parameterized Paths, Path Matching Priority, Regex Generation Rules (+2 more)
 
-### Community 821 - "cmd_prune"
-Cohesion: 0.38
-Nodes (6): cmd_prune(), _pending_item(), test_cmd_prune_deletes_only_expired(), test_cmd_prune_dry_run_keeps_files(), test_cmd_prune_empty_pending_nothing_to_do(), test_cmd_prune_quiet_suppresses_output()
+### Community 820 - "8. Advanced Patterns (LOW)"
+Cohesion: 0.40
+Nodes (5): 8. Advanced Patterns (LOW), Event handler refs, Init once per app load, `useEffectEvent` deps, `useLatest` for stable callback refs
+
+### Community 821 - "10. Package/Dependency Review"
+Cohesion: 0.50
+Nodes (4): 10. Package/Dependency Review, Evaluating pub.dev packages:, Monorepo-specific (melos/workspace):, Version constraints:
+
+### Community 822 - "performance_and_stress_test.dart"
+Cohesion: 0.15
+Nodes (5): ArtworkCacheService, main, cacheService, main, tempTestDir
+
+### Community 826 - "12. Error Handling"
+Cohesion: 0.50
+Nodes (4): 12. Error Handling, Error reporting:, Framework error handling:, Graceful degradation:
+
+### Community 827 - "13. Internationalization (l10n)"
+Cohesion: 0.50
+Nodes (4): 13. Internationalization (l10n), Code review:, Content:, Setup:
+
+### Community 828 - "15. Static Analysis"
+Cohesion: 0.50
+Nodes (4): 15. Static Analysis, Configuration:, Enforcement:, Key rules to verify regardless of lint package:
+
+### Community 829 - "8. Platform-Specific Concerns"
+Cohesion: 0.67
+Nodes (3): 8. Platform-Specific Concerns, iOS/Android differences:, Responsive design:
 
 ## Knowledge Gaps
-- **1047 isolated node(s):** `_splashBackground`, `_timelineDuration`, `_ambientCycleDuration`, `_macosRevealCurve`, `_macosTrackingCurve` (+1042 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 9240 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **41 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1113 isolated node(s):** `_prefKey`, `_hasUserOverride`, `_hydrate`, `setThemeMode`, `navigationShell` (+1108 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 9318 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **40 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `build()` connect `build-agreement.js` to `Flutter Code Review`, `HarmonyOS / ArkTS Patterns`, `5. Performance`?**
+- **Why does `build()` connect `build-agreement.js` to `Flutter Code Review`, `HarmonyOS / ArkTS Patterns`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `grade()` (e.g. with `ComplianceSpec` and `ObservationEvent`) actually correct?**
   _`grade()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `_splashBackground`, `_timelineDuration`, `_ambientCycleDuration` to the rest of the system?**
-  _1047 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `_prefKey`, `_hasUserOverride`, `_hydrate` to the rest of the system?**
+  _1113 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `app_database.dart` be split into smaller, more focused modules?**
   _Cohesion score 0.03225806451612903 - nodes in this community are weakly interconnected._
 - **Why does `Architecture Pattern: MVVM` connect `HarmonyOS / ArkTS Patterns` to `build-agreement.js`?**
   _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Are the 12 inferred relationships involving `ObservationEvent` (e.g. with `classify_events()` and `_check_temporal_order()`) actually correct?**
-  _`ObservationEvent` has 12 INFERRED edges - model-reasoned connections that need verification._
 - **Should `library_providers.dart` be split into smaller, more focused modules?**
-  _Cohesion score 0.028823900694298337 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0292717333803562 - nodes in this community are weakly interconnected._
+- **Should `audit-docs.py` be split into smaller, more focused modules?**
+  _Cohesion score 0.06142643764002987 - nodes in this community are weakly interconnected._

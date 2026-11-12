@@ -214,6 +214,9 @@ class PlayerNotifier extends Notifier<PlayerState> {
   AudioPlayerFacade get _facade => ref.read(audioPlayerFacadeProvider);
   SonoraAudioHandler? get _handler => ref.read(audioHandlerProvider);
 
+  int _loadRequestId = 0;
+  String? _loadedTrackId;
+
   @override
   PlayerState build() {
     final facade = ref.watch(audioPlayerFacadeProvider);
@@ -240,10 +243,13 @@ class PlayerNotifier extends Notifier<PlayerState> {
     });
 
     final subBuffering = facade.isBufferingStream.listen((buffering) {
-      state = state.copyWith(isLoading: buffering);
+      if (state.isLoading != buffering) {
+        state = state.copyWith(isLoading: buffering);
+      }
     });
 
     final subCompleted = facade.playbackCompletedStream.listen((_) {
+      if (state.track == null || state.queue.isEmpty) return;
       _onPlaybackCompleted();
     });
 
@@ -260,6 +266,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
           _ => PlaybackRepeatMode.off,
         };
         state = state.copyWith(repeatMode: repeat);
+        handler.syncModes(repeatMode: mode);
       };
       handler.onSetShuffleMode = (mode) {
         final shuffle = mode == AudioServiceShuffleMode.all;
@@ -295,8 +302,46 @@ class PlayerNotifier extends Notifier<PlayerState> {
     );
   }
 
+  /// Replaces the unplayed initial showcase placeholder with real indexed library
+  /// tracks so daily-use playback never lingers on sample tracks.
+  void syncRealLibrary(List<UiTrack> realTracks) {
+    if (realTracks.isEmpty) return;
+    final current = state.track;
+    final isShowcasePlaceholder =
+        current != null &&
+        current.sourceUri == null &&
+        current.filePath == null &&
+        kShowcaseTracks.any((s) => s.id == current.id);
+
+    if (!isShowcasePlaceholder || state.isPlaying || _loadedTrackId != null) {
+      return;
+    }
+
+    final first = realTracks.first;
+    state = state.copyWith(
+      track: first,
+      queue: List.unmodifiable(realTracks),
+      originalQueue: List.unmodifiable(realTracks),
+      queueIndex: 0,
+      position: Duration.zero,
+      duration: first.duration,
+      clearError: true,
+    );
+    _handler?.updateActiveTrack(first);
+    _handler?.updateActiveQueue(state.queue);
+    _handler?.updateQueueIndex(0);
+  }
+
+  void clearPlaybackError() {
+    if (state.playbackError != null) {
+      state = state.copyWith(clearError: true);
+    }
+  }
+
   /// Plays a given track, optionally replacing the current queue.
   Future<void> playTrack(UiTrack track, {List<UiTrack>? queue}) async {
+    final requestId = ++_loadRequestId;
+
     List<UiTrack> updatedQueue;
     List<UiTrack> updatedOriginalQueue;
     int newIndex;
@@ -344,36 +389,76 @@ class PlayerNotifier extends Notifier<PlayerState> {
 
     _handler?.updateActiveTrack(track);
     _handler?.updateActiveQueue(updatedQueue);
+    _handler?.updateQueueIndex(newIndex);
 
-    await _loadAndPlay(track);
+    await _loadAndPlay(track, requestId);
   }
 
-  Future<void> _loadAndPlay(UiTrack track) async {
+  Future<void> _loadAndPlay(UiTrack track, int requestId) async {
     try {
+      if (requestId != _loadRequestId) return;
+
       final uri = track.sourceUri;
       final path = track.filePath;
+      final isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
 
-      if (uri != null && uri.isNotEmpty) {
-        await _facade.load(uri, isUri: true);
-      } else if (path != null && path.isNotEmpty) {
-        await _facade.load(path, isUri: false);
-      } else {
+      if ((uri == null || uri.isEmpty) && (path == null || path.isEmpty)) {
+        if (!isFlutterTest) {
+          state = state.copyWith(
+            isPlaying: false,
+            isLoading: false,
+            playbackError:
+                'Sample preview track has no local file. Scan your music library to play real audio.',
+          );
+          return;
+        }
         await _facade.load(track.id, isUri: false);
+      } else if (uri != null && uri.isNotEmpty) {
+        if (!isFlutterTest &&
+            !uri.startsWith('content://') &&
+            path != null &&
+            path.isNotEmpty &&
+            !await File(path).exists()) {
+          throw FileSystemException('Audio file not found', path);
+        }
+        await _facade.load(uri, isUri: true);
+      } else {
+        if (!isFlutterTest && !await File(path!).exists()) {
+          throw FileSystemException('Audio file not found', path);
+        }
+        await _facade.load(path!, isUri: false);
       }
 
+      if (requestId != _loadRequestId) return;
+      _loadedTrackId = track.id;
+
       await _facade.play();
+      if (requestId != _loadRequestId) return;
+
       state = state.copyWith(
         isPlaying: true,
         isLoading: false,
         clearError: true,
       );
     } catch (e) {
+      if (requestId != _loadRequestId) return;
       state = state.copyWith(
         isPlaying: false,
         isLoading: false,
-        playbackError: e.toString(),
+        playbackError: _formatPlaybackError(e, track),
       );
     }
+  }
+
+  String _formatPlaybackError(Object error, UiTrack track) {
+    if (error is FileSystemException) {
+      return 'File missing or inaccessible: "${track.title}"';
+    }
+    final msg = error.toString();
+    if (msg.contains('Failed to load audio source')) {
+      return msg;
+    }
+    return 'Unable to play "${track.title}": $msg';
   }
 
   /// Sets the queue and original sequence directly.
@@ -384,12 +469,31 @@ class PlayerNotifier extends Notifier<PlayerState> {
       queueIndex: 0,
     );
     _handler?.updateActiveQueue(state.queue);
+    _handler?.updateQueueIndex(newQueue.isEmpty ? null : 0);
   }
 
   /// Appends a single track to the end of the queue.
   void addToQueue(UiTrack track) {
     final updatedQueue = [...state.queue, track];
     final updatedOriginal = [...state.originalQueue, track];
+    state = state.copyWith(
+      queue: List.unmodifiable(updatedQueue),
+      originalQueue: List.unmodifiable(updatedOriginal),
+    );
+    _handler?.updateActiveQueue(state.queue);
+  }
+
+  /// Inserts [track] immediately after the currently playing track (or plays it
+  /// if no real track is currently loaded).
+  Future<void> playNext(UiTrack track) async {
+    if (state.track == null || state.queue.isEmpty) {
+      await playTrack(track, queue: [track]);
+      return;
+    }
+    final insertAt = (state.queueIndex + 1).clamp(0, state.queue.length);
+    final updatedQueue = List<UiTrack>.from(state.queue)
+      ..insert(insertAt, track);
+    final updatedOriginal = List<UiTrack>.from(state.originalQueue)..add(track);
     state = state.copyWith(
       queue: List.unmodifiable(updatedQueue),
       originalQueue: List.unmodifiable(updatedOriginal),
@@ -432,11 +536,13 @@ class PlayerNotifier extends Notifier<PlayerState> {
       queueIndex: newIndex,
     );
     _handler?.updateActiveQueue(state.queue);
+    _handler?.updateQueueIndex(newIndex);
   }
 
   /// Plays a track at the given [index] in the active queue.
   Future<void> playQueueIndex(int index) async {
     if (index < 0 || index >= state.queue.length) return;
+    final requestId = ++_loadRequestId;
     final track = state.queue[index];
     state = state.copyWith(
       track: track,
@@ -447,11 +553,14 @@ class PlayerNotifier extends Notifier<PlayerState> {
       clearError: true,
     );
     _handler?.updateActiveTrack(track);
-    await _loadAndPlay(track);
+    _handler?.updateQueueIndex(index);
+    await _loadAndPlay(track, requestId);
   }
 
   /// Clears the entire queue and halts playback.
   Future<void> clearQueue() async {
+    _loadRequestId++;
+    _loadedTrackId = null;
     await _facade.stop();
     state = state.copyWith(
       queue: const [],
@@ -459,7 +568,9 @@ class PlayerNotifier extends Notifier<PlayerState> {
       queueIndex: 0,
       clearTrack: true,
       isPlaying: false,
+      isLoading: false,
       position: Duration.zero,
+      clearError: true,
     );
     _handler?.updateActiveQueue(const []);
   }
@@ -477,6 +588,16 @@ class PlayerNotifier extends Notifier<PlayerState> {
       await _facade.pause();
       state = state.copyWith(isPlaying: false);
     } else {
+      if (_loadedTrackId != state.track!.id) {
+        final requestId = ++_loadRequestId;
+        state = state.copyWith(isLoading: true, clearError: true);
+        _handler?.updateActiveTrack(state.track!);
+        _handler?.updateActiveQueue(state.queue);
+        _handler?.updateQueueIndex(state.queueIndex);
+        await _loadAndPlay(state.track!, requestId);
+        return;
+      }
+
       if (state.effectiveDuration > Duration.zero &&
           state.position >= state.effectiveDuration) {
         await _facade.seek(Duration.zero);
@@ -506,16 +627,35 @@ class PlayerNotifier extends Notifier<PlayerState> {
   /// Toggles the favorite status of the active track and updates the SQLite repository.
   Future<void> toggleFavorite() async {
     if (state.track == null) return;
+    final targetId = state.track!.id;
     final newFavorite = !state.track!.isFavorite;
-    final updated = state.track!.copyWith(isFavorite: newFavorite);
-    state = state.copyWith(track: updated);
+    syncTrackFavorite(targetId, newFavorite);
 
     try {
       final repo = ref.read(musicLibraryRepositoryProvider);
-      await repo.toggleFavorite(state.track!.id, newFavorite);
+      await repo.toggleFavorite(targetId, newFavorite);
     } catch (_) {
       // Ignore if not present in database
     }
+  }
+
+  /// Synchronizes favorite status across current track and active/original queues.
+  void syncTrackFavorite(String trackId, bool isFavorite) {
+    final updatedTrack = state.track?.id == trackId
+        ? state.track!.copyWith(isFavorite: isFavorite)
+        : state.track;
+    final updatedQueue = state.queue
+        .map((t) => t.id == trackId ? t.copyWith(isFavorite: isFavorite) : t)
+        .toList(growable: false);
+    final updatedOriginal = state.originalQueue
+        .map((t) => t.id == trackId ? t.copyWith(isFavorite: isFavorite) : t)
+        .toList(growable: false);
+
+    state = state.copyWith(
+      track: updatedTrack,
+      queue: List.unmodifiable(updatedQueue),
+      originalQueue: List.unmodifiable(updatedOriginal),
+    );
   }
 
   /// Toggles shuffle mode, preserving original queue order when un-shuffling.
@@ -527,6 +667,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
           : state.queue;
       if (baseList.isEmpty) {
         state = state.copyWith(isShuffle: true);
+        _handler?.syncModes(shuffleMode: AudioServiceShuffleMode.all);
         return;
       }
 
@@ -543,7 +684,8 @@ class PlayerNotifier extends Notifier<PlayerState> {
         queueIndex: 0,
       );
       _handler?.updateActiveQueue(newQueue);
-      _handler?.setShuffleMode(AudioServiceShuffleMode.all);
+      _handler?.updateQueueIndex(0);
+      _handler?.syncModes(shuffleMode: AudioServiceShuffleMode.all);
     } else {
       final restoredQueue = state.originalQueue.isNotEmpty
           ? state.originalQueue
@@ -552,14 +694,16 @@ class PlayerNotifier extends Notifier<PlayerState> {
       final restoredIndex = currentTrack != null
           ? restoredQueue.indexWhere((t) => t.id == currentTrack.id)
           : 0;
+      final safeIdx = restoredIndex != -1 ? restoredIndex : 0;
 
       state = state.copyWith(
         isShuffle: false,
         queue: restoredQueue,
-        queueIndex: restoredIndex != -1 ? restoredIndex : 0,
+        queueIndex: safeIdx,
       );
       _handler?.updateActiveQueue(restoredQueue);
-      _handler?.setShuffleMode(AudioServiceShuffleMode.none);
+      _handler?.updateQueueIndex(safeIdx);
+      _handler?.syncModes(shuffleMode: AudioServiceShuffleMode.none);
     }
   }
 
@@ -577,7 +721,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       PlaybackRepeatMode.all => AudioServiceRepeatMode.all,
       PlaybackRepeatMode.one => AudioServiceRepeatMode.one,
     };
-    _handler?.setRepeatMode(serviceMode);
+    _handler?.syncModes(repeatMode: serviceMode);
   }
 
   /// Advances to the next track in queue or wraps/stops based on repeat mode.
@@ -591,6 +735,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
         nextIndex = 0;
       } else {
         if (autoAdvance) {
+          _loadRequestId++;
           await _facade.stop();
           state = state.copyWith(isPlaying: false, position: Duration.zero);
           return;
@@ -637,11 +782,15 @@ class PlayerNotifier extends Notifier<PlayerState> {
 
   /// Dismisses playback and clears current track.
   Future<void> dismissPlayer() async {
+    _loadRequestId++;
+    _loadedTrackId = null;
     await _facade.stop();
     state = state.copyWith(
       clearTrack: true,
       isPlaying: false,
+      isLoading: false,
       position: Duration.zero,
+      clearError: true,
     );
     _handler?.updateActiveQueue(const []);
   }

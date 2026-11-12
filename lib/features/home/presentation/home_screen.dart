@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../shared/utils/scan_feedback.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/format_badge.dart';
 import '../../../shared/widgets/section_header.dart';
 import '../../../shared/widgets/sonora_artwork.dart';
+import '../../../shared/widgets/track_options_sheet.dart';
 import '../../../shared/widgets/track_tile.dart';
 import '../../library/domain/smart_playlist.dart';
 import '../../library/presentation/library_providers.dart';
@@ -28,30 +30,14 @@ class HomeScreen extends ConsumerWidget {
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startAndroidScan();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Discovered ${summary.newlyAddedCount} tracks in MediaStore.'
-                : (summary.errorMessage ?? 'Scan failed.'),
-          ),
-        ),
-      );
+      if (!context.mounted) return;
+      showScanFeedback(context, summary);
     } else {
       final summary = await ref
           .read(scanStatusProvider.notifier)
           .startIosImport();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            summary.isSuccess
-                ? 'Imported ${summary.newlyAddedCount} audio files.'
-                : (summary.errorMessage ?? 'Import failed.'),
-          ),
-        ),
-      );
+      if (!context.mounted) return;
+      showScanFeedback(context, summary, isIosImport: true);
     }
   }
 
@@ -496,6 +482,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => ref
                               .read(playerProvider.notifier)
                               .playTrack(track, queue: activeTracks),
+                          onMoreOptions: () =>
+                              showTrackOptionsSheet(context, ref, track),
                         );
                       }, childCount: activeTracks.length),
                     ),

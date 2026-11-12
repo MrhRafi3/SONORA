@@ -420,9 +420,9 @@
     "semantic_hash": ""
   },
   "android/app/src/main/kotlin/com/mrhrafi3/sonora/MainActivity.kt": {
-    "mtime": 1793390554.1179178,
-    "seen": 1794321289.650027,
-    "ast_hash": "523b4d700a132e105e05fbb9193de939",
+    "mtime": 1794488437.8044488,
+    "seen": 1794489242.072934,
+    "ast_hash": "92466f07b38aa8453cfa6299b0982aaf",
     "semantic_hash": ""
   },
   "android/build.gradle.kts": {
@@ -480,15 +480,15 @@
     "semantic_hash": ""
   },
   "lib/app/app.dart": {
-    "mtime": 1793435926.912371,
-    "seen": 1794321289.650035,
-    "ast_hash": "c7a14935af54a8cd51f9c1eed66cf3f7",
+    "mtime": 1794488674.113116,
+    "seen": 1794489242.073676,
+    "ast_hash": "d63850d1e729b9145d4b8844679c00ef",
     "semantic_hash": ""
   },
   "lib/app/app_shell.dart": {
-    "mtime": 1793383092.2947018,
-    "seen": 1794321289.6500359,
-    "ast_hash": "7ee17aacdd732e67cf26eea214eb3766",
+    "mtime": 1794488942.1745946,
+    "seen": 1794489242.073678,
+    "ast_hash": "af258a9e47831bc1875a7401266c5227",
     "semantic_hash": ""
   },
   "lib/app/router.dart": {
@@ -528,9 +528,9 @@
     "semantic_hash": ""
   },
   "lib/app/theme/theme_accent.dart": {
-    "mtime": 1793437087.416797,
-    "seen": 1794321289.650042,
-    "ast_hash": "d7398c73de55c1f4c0d651f18c26c969",
+    "mtime": 1794488903.7410693,
+    "seen": 1794489242.073844,
+    "ast_hash": "3e99bbc112cd32a0b087605ababa45e3",
     "semantic_hash": ""
   },
   "lib/core/constants/app_constants.dart": {
@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "lib/core/database/app_database.dart": {
-    "mtime": 1793437087.4283912,
-    "seen": 1794321289.650044,
-    "ast_hash": "a3755f00b87f14cb98167165729d1bf3",
+    "mtime": 1794488903.7548053,
+    "seen": 1794489242.073876,
+    "ast_hash": "dbe9c5ed4ba45c8163811499cce2ee4b",
     "semantic_hash": ""
   },
   "lib/core/database/app_database.g.dart": {
@@ -564,9 +564,9 @@
     "semantic_hash": ""
   },
   "lib/core/services/artwork_cache_service.dart": {
-    "mtime": 1793440184.2796798,
-    "seen": 1794321289.650047,
-    "ast_hash": "d7d7118873c0e8b569b68d0e7bc41d27",
+    "mtime": 1794488446.4368515,
+    "seen": 1794489242.0739431,
+    "ast_hash": "0414bcc8809582b5922dc1233b77c438",
     "semantic_hash": ""
   },
   "lib/core/services/audio_metadata_service.dart": {
@@ -606,21 +606,21 @@
     "semantic_hash": ""
   },
   "lib/features/home/presentation/home_screen.dart": {
-    "mtime": 1793437087.5608222,
-    "seen": 1794321289.650053,
-    "ast_hash": "8f32348c1530f0a57fbae7be76fcb521",
+    "mtime": 1794488874.8015144,
+    "seen": 1794489242.074074,
+    "ast_hash": "71ca29837b8edd3267d00ea88a793f87",
     "semantic_hash": ""
   },
   "lib/features/library/data/android_media_scanner.dart": {
-    "mtime": 1793386128.0253837,
-    "seen": 1794321289.650053,
-    "ast_hash": "dbe57fcb1df4d26acced5a5d1d327219",
+    "mtime": 1794488494.9022272,
+    "seen": 1794489242.074076,
+    "ast_hash": "a9e17a340d48b6bab11ef0742878758e",
     "semantic_hash": ""
   },
   "lib/features/library/data/drift_library_repository.dart": {
-    "mtime": 1793435994.855308,
-    "seen": 1794321289.650054,
-    "ast_hash": "7de84469b866ed8778e515c7126ae726",
+    "mtime": 1794488497.4096894,
+    "seen": 1794489242.074076,
+    "ast_hash": "a4e71251d05d30178705bd30253ea202",
     "semantic_hash": ""
   },
   "lib/features/library/data/ios_file_importer.dart": {
@@ -630,9 +630,9 @@
     "semantic_hash": ""
   },
   "lib/features/library/domain/entities.dart": {
-    "mtime": 1793387870.4092166,
-    "seen": 1794321289.650056,
-    "ast_hash": "5c09f9e63e63caa44a14fe292a07665a",
+    "mtime": 1794488465.5422742,
+    "seen": 1794489242.0741,
+    "ast_hash": "29179110d763d15c2cd925bf3e1cc30f",
     "semantic_hash": ""
   },
   "lib/features/library/domain/library_repository.dart": {
@@ -648,15 +648,15 @@
     "semantic_hash": ""
   },
   "lib/features/library/presentation/library_providers.dart": {
-    "mtime": 1793437087.5804887,
-    "seen": 1794321289.650058,
-    "ast_hash": "17b1510e8a589a19be976610562ad4e8",
+    "mtime": 1794488581.2796397,
+    "seen": 1794489242.074141,
+    "ast_hash": "04fe6c385478efb4ef39aaeb514fcee4",
     "semantic_hash": ""
   },
   "lib/features/library/presentation/library_screen.dart": {
-    "mtime": 1793436394.510381,
-    "seen": 1794321289.650059,
-    "ast_hash": "ed8c7cf974f7886ca9443c0946294dde",
+    "mtime": 1794488841.1476119,
+    "seen": 1794489242.074143,
+    "ast_hash": "efeb6ceb9cce8bd968a1832fb407f7ad",
     "semantic_hash": ""
   },
   "lib/features/player/data/fake_audio_player_facade.dart": {
@@ -666,15 +666,15 @@
     "semantic_hash": ""
   },
   "lib/features/player/data/just_audio_player_facade.dart": {
-    "mtime": 1793390554.5880315,
-    "seen": 1794321289.6500611,
-    "ast_hash": "fd2eda26d3b171de7198b1587e5bc452",
+    "mtime": 1794488903.934124,
+    "seen": 1794489242.074166,
+    "ast_hash": "c5a8a6c012e67110299658f74e87db2f",
     "semantic_hash": ""
   },
   "lib/features/player/data/sonora_audio_handler.dart": {
-    "mtime": 1793390554.8027277,
-    "seen": 1794321289.6500611,
-    "ast_hash": "3d6b2c0c4e0e12a93234db9356bfd81c",
+    "mtime": 1794488536.981059,
+    "seen": 1794489242.074167,
+    "ast_hash": "3c8b81869762ecd5b744b463d134ea34",
     "semantic_hash": ""
   },
   "lib/features/player/domain/audio_player_facade.dart": {
@@ -690,21 +690,21 @@
     "semantic_hash": ""
   },
   "lib/features/player/presentation/player_screen.dart": {
-    "mtime": 1793434985.031639,
-    "seen": 1794321289.6500638,
-    "ast_hash": "27fbeca85b64e42f0aaebaa38b4026f9",
+    "mtime": 1794488903.9770598,
+    "seen": 1794489242.0742111,
+    "ast_hash": "0fac61b92a7e8384834ae0dea39f53b1",
     "semantic_hash": ""
   },
   "lib/features/player/presentation/player_state.dart": {
-    "mtime": 1793390554.9703197,
-    "seen": 1794321289.650065,
-    "ast_hash": "c6ece5f21621b5870a355077bfba27a7",
+    "mtime": 1794488578.4629514,
+    "seen": 1794489242.074212,
+    "ast_hash": "96be6608a54384dc97041044eda05602",
     "semantic_hash": ""
   },
   "lib/features/player/presentation/widgets/audio_inspector_sheet.dart": {
-    "mtime": 1793434918.566406,
-    "seen": 1794321289.650065,
-    "ast_hash": "1db3b76b723f871f14ea650ef23e752f",
+    "mtime": 1794488760.7549682,
+    "seen": 1794489242.074213,
+    "ast_hash": "002c8244e593dd0887d0524a9ec63dc0",
     "semantic_hash": ""
   },
   "lib/features/player/presentation/widgets/lyrics_sheet.dart": {
@@ -726,15 +726,15 @@
     "semantic_hash": ""
   },
   "lib/features/search/presentation/search_screen.dart": {
-    "mtime": 1793388407.568732,
-    "seen": 1794321289.650069,
-    "ast_hash": "bd39378f1399aa22555837277e7269ae",
+    "mtime": 1794488904.0284657,
+    "seen": 1794489242.074303,
+    "ast_hash": "9abb478a70db5f7c1d3da473a2625478",
     "semantic_hash": ""
   },
   "lib/features/settings/presentation/settings_providers.dart": {
-    "mtime": 1793443646.591424,
-    "seen": 1794321289.650069,
-    "ast_hash": "c5ead321440857ae8ba3bc6a92095bd3",
+    "mtime": 1794488700.2766955,
+    "seen": 1794489242.074304,
+    "ast_hash": "87e1fba17a6e7a7162710234590f224e",
     "semantic_hash": ""
   },
   "lib/features/settings/presentation/settings_screen.dart": {
@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "lib/features/settings/presentation/subpages/library_storage_settings_screen.dart": {
-    "mtime": 1793443685.3155239,
-    "seen": 1794321289.650073,
-    "ast_hash": "cc6a8840de0785fd761bfd38a5f5cd93",
+    "mtime": 1794488877.0735226,
+    "seen": 1794489242.074383,
+    "ast_hash": "2a746caceade00ac9297d71a6b962676",
     "semantic_hash": ""
   },
   "lib/features/settings/presentation/subpages/notifications_settings_screen.dart": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "lib/main.dart": {
-    "mtime": 1793462509.0660548,
-    "seen": 1794321289.6500769,
-    "ast_hash": "cabe6e6618005a2ab06a7ae8215d4425",
+    "mtime": 1794488532.7585883,
+    "seen": 1794489242.074523,
+    "ast_hash": "9efe72a063bf7cd315eea80a9f92aad9",
     "semantic_hash": ""
   },
   "lib/shared/widgets/animated_play_pause_button.dart": {
@@ -5142,9 +5142,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793390553.9595401,
-    "seen": 1794321289.6506848,
-    "ast_hash": "fb79a2086f8ad78643fa7f09c81bf328",
+    "mtime": 1794489077.4686272,
+    "seen": 1794489242.12063,
+    "ast_hash": "19ee15af7c5e0708485c23f2e9191024",
     "semantic_hash": ""
   },
   "docs/ARCHITECTURE.md": {
@@ -5379,6 +5379,30 @@
     "mtime": 1794486910.2354715,
     "seen": 1794486964.460511,
     "ast_hash": "995da3cbd40dd4fa88d2930590aaaf6b",
+    "semantic_hash": ""
+  },
+  "lib/core/services/app_preferences_service.dart": {
+    "mtime": 1794488608.095433,
+    "seen": 1794489242.073942,
+    "ast_hash": "257a702d818f0f4054ec652905ea4ed8",
+    "semantic_hash": ""
+  },
+  "lib/shared/utils/scan_feedback.dart": {
+    "mtime": 1794488609.9075108,
+    "seen": 1794489242.074524,
+    "ast_hash": "f8c282d79698b48c4c11b80fe487573b",
+    "semantic_hash": ""
+  },
+  "lib/shared/widgets/track_options_sheet.dart": {
+    "mtime": 1794488904.1101115,
+    "seen": 1794489242.0746748,
+    "ast_hash": "4c03e6b2aa4159f166405efedf055070",
+    "semantic_hash": ""
+  },
+  "test/daily_use_readiness_test.dart": {
+    "mtime": 1794489168.3114498,
+    "seen": 1794489242.075892,
+    "ast_hash": "ccfd78110bbc7d3db189905e4f935632",
     "semantic_hash": ""
   }
 }

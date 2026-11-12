@@ -221,9 +221,14 @@ class ScanStatusNotifier extends Notifier<ScanStatus> {
     final summary = await repo.scanAndroidMediaStore();
 
     if (summary.isSuccess) {
+      final msg = summary.scannedCount == 0
+          ? 'No supported audio tracks found on device.'
+          : summary.newlyAddedCount == 0
+          ? 'Library up to date (${summary.scannedCount} tracks indexed).'
+          : 'Discovered ${summary.newlyAddedCount} new tracks (${summary.scannedCount} total).';
       state = ScanStatus(
         state: ScanProgressState.completed,
-        message: 'Discovered ${summary.newlyAddedCount} tracks.',
+        message: msg,
         summary: summary,
       );
     } else {

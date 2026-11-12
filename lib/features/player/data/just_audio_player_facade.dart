@@ -38,7 +38,11 @@ class JustAudioPlayerFacade implements AudioPlayerFacade {
 
   @override
   Stream<void> get playbackCompletedStream => _player.playerStateStream
-      .where((state) => state.processingState == ja.ProcessingState.completed)
+      .map((state) => state.processingState)
+      .distinct()
+      .where(
+        (processingState) => processingState == ja.ProcessingState.completed,
+      )
       .map((_) {});
 
   @override

@@ -43,9 +43,53 @@ The following technical characteristics and known limitations have been verified
 3. **Bit-Depth Information**:
    - The pure-Dart `audio_metadata_reader` package does not expose universal bit-depth (`bitsPerSample`) information on its generic `AudioMetadata` container across all formats. As a result, `AudioTrack.bitDepth` is stored as `null` in the local SQLite database. The UI format badge displays the sample rate or bitrate instead (e.g. `FLAC • 96 kHz` or `MP3 • 320 kbps`).
 4. **Raw ADTS AAC Metadata**:
-   - Containerized AAC audio (such as `.m4a` and `.mp4`) parses fully. Raw uncontainerized ADTS audio streams (`.aac`) that lack container atoms may fall back to filename-based title and artist metadata with zero duration.
-5. **Hardware Environment Testing**:
-   - Automated testing and verification have been executed in virtual simulator and emulator build environments (`build apk --debug`, `build ios --simulator`). Actual physical-device field testing across specific vendor hardware and legacy OS revisions has not yet been performed.
+   - Containerized AAC audio (`.m4a` / `.mp4`) parses tags cleanly. Raw uncontainerized ADTS streams (`.aac`) lack standard tag atoms and may fall back to filename-based title metadata, though MediaStore duration is now preserved when available and playback uses Android's ExoPlayer decoder.
+5. **Physical Device Verification Status**:
+   - All automated checks (`dart format`, `flutter analyze`, `flutter test`, `flutter build apk --debug`) run in host/test environments with the target Xiaomi Redmi Note 11 disconnected. Physical-device playback, background persistence, Xiaomi battery behavior, and live format matrix validation remain pending manual on-device testing.
+
+---
+
+## Android Daily-Use Guide (Redmi Note 11)
+
+### Building & Installing the Debug APK
+
+```bash
+# Build Android debug APK (Application ID: com.mrhrafi3.sonora)
+flutter build apk --debug
+
+# Verify connected device and install without clearing existing app data
+adb devices -l
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+```
+
+### Permissions & Music Library Scan
+
+- **Android 13+ (API 33+)**: SONORA requests `READ_MEDIA_AUDIO` for library scanning and non-blocking `POST_NOTIFICATIONS` for lock-screen/shade media controls.
+- **Android 12 and older (API <= 32)**: SONORA requests `READ_EXTERNAL_STORAGE`.
+- Open **Home** or **Library**, tap the **Scan** icon (`sync`), and grant audio access. If permission was permanently denied, tap the **Settings** action in the snackbar to enable audio permission manually.
+- Rescanning preserves existing favorites, custom playlists, `dateAdded` timestamps, and cached artwork while marking deleted files unavailable.
+
+### Audio Format Support Matrix
+
+Planned offline formats (`lib/core/constants/app_constants.dart`):
+
+| Format | Scanner Discovery | Metadata Tags | Playback Engine | Physical Verification Status |
+|---|---|---|---|---|
+| `MP3` | Indexed (`MediaStore`) | `audio_metadata_reader` | `just_audio` (ExoPlayer) | Pending on-device test |
+| `FLAC` | Indexed (`MediaStore`) | `audio_metadata_reader` (`bitDepth` null) | `just_audio` (ExoPlayer) | Pending on-device test |
+| `WAV` | Indexed (`MediaStore`) | Filename/duration fallback where untagged | `just_audio` (ExoPlayer) | Pending on-device test |
+| `M4A` | Indexed (`MediaStore`) | `audio_metadata_reader` | `just_audio` (ExoPlayer) | Pending on-device test |
+| `AAC` | Indexed (duration exemption for `.aac`) | Filename fallback for raw ADTS | `just_audio` (ExoPlayer) | Pending on-device test |
+| `OGG` | Indexed (`MediaStore`) | `audio_metadata_reader` | `just_audio` (ExoPlayer) | Pending on-device test |
+| `OPUS` | Indexed (`MediaStore`) | `audio_metadata_reader` | `just_audio` (ExoPlayer) | Pending on-device test |
+
+### Xiaomi MIUI / HyperOS Background Playback Notes
+
+If MIUI/HyperOS stops background audio when the screen locks or switches apps aggressively:
+
+1. Open **Settings → Apps → Manage apps → SONORA → Battery saver** and select **No restrictions**.
+2. Keep the media notification enabled so Android runs `AudioService` as a visible foreground service (`foregroundServiceType="mediaPlayback"`).
+3. Lock **SONORA** in Recents if MIUI clears background tasks aggressively.
 
 ---
 

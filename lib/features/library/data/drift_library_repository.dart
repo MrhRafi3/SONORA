@@ -205,11 +205,14 @@ class DriftLibraryRepository implements MusicLibraryRepository {
     try {
       final scanItems = await androidScanner.scanMediaStore();
       final companions = scanItems.map(_mapScanItemToCompanion).toList();
-      await database.batchInsertTracks(companions);
+      final stats = await database.reconcilePlatformTracks(
+        platformSource: 'android_mediastore',
+        scannedEntries: companions,
+      );
 
       return ScanSummary(
         scannedCount: scanItems.length,
-        newlyAddedCount: scanItems.length,
+        newlyAddedCount: stats.newlyAddedCount,
         failedCount: 0,
       );
     } on ScanPermissionDeniedException catch (e) {
@@ -218,6 +221,7 @@ class DriftLibraryRepository implements MusicLibraryRepository {
         newlyAddedCount: 0,
         failedCount: 0,
         errorMessage: e.message,
+        permissionPermanentlyDenied: e.isPermanentlyDenied,
       );
     } catch (e) {
       return ScanSummary(

@@ -24,63 +24,119 @@ class PlayerScreen extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: AppSpacing.cornerLg),
       ),
-      builder: (context) {
-        final playerState = ref.watch(playerProvider);
-        final queueTracks = playerState.queue.isNotEmpty
-            ? playerState.queue
-            : kShowcaseTracks;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Up Next In Queue',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+      builder: (sheetContext) {
+        return Consumer(
+          builder: (context, ref, _) {
+            final playerState = ref.watch(playerProvider);
+            final queueTracks = playerState.queue;
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              queueTracks.isEmpty
+                                  ? 'Queue'
+                                  : 'Up Next In Queue (${queueTracks.length})',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          if (queueTracks.isNotEmpty)
+                            TextButton(
+                              onPressed: () {
+                                ref.read(playerProvider.notifier).clearQueue();
+                                Navigator.pop(sheetContext);
+                              },
+                              child: const Text('Clear'),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(sheetContext),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (queueTracks.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.xl,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Your queue is empty. Tap any track to start playing.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.6),
+                                ),
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: queueTracks.length,
+                          itemBuilder: (context, index) {
+                            final track = queueTracks[index];
+                            final isCurrent =
+                                index == playerState.queueIndex &&
+                                playerState.track?.id == track.id;
+
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: TrackTile(
+                                    track: track,
+                                    isPlaying:
+                                        isCurrent && playerState.isPlaying,
+                                    onTap: () {
+                                      ref
+                                          .read(playerProvider.notifier)
+                                          .playQueueIndex(index);
+                                      Navigator.pop(sheetContext);
+                                    },
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Remove from queue',
+                                  icon: Icon(
+                                    Icons.remove_circle_outline_rounded,
+                                    size: 20,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                  onPressed: () {
+                                    ref
+                                        .read(playerProvider.notifier)
+                                        .removeFromQueue(index);
+                                  },
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                              ],
+                            );
+                          },
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: queueTracks.length,
-                    itemBuilder: (context, index) {
-                      final track = queueTracks[index];
-                      final isCurrent = playerState.track?.id == track.id;
-
-                      return TrackTile(
-                        track: track,
-                        isPlaying: isCurrent && playerState.isPlaying,
-                        onTap: () {
-                          ref
-                              .read(playerProvider.notifier)
-                              .playQueueIndex(index);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -111,6 +167,26 @@ class PlayerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<String?>(playerProvider.select((s) => s.playbackError), (
+      _,
+      nextError,
+    ) {
+      if (nextError == null || nextError.isEmpty) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger != null) {
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(nextError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      Future.microtask(() {
+        ref.read(playerProvider.notifier).clearPlaybackError();
+      });
+    });
+
     final theme = Theme.of(context);
     final sonora = context.sonoraTheme;
     final playerState = ref.watch(playerProvider);

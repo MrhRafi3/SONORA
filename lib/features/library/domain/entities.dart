@@ -226,12 +226,14 @@ class ScanSummary {
     required this.newlyAddedCount,
     required this.failedCount,
     this.errorMessage,
+    this.permissionPermanentlyDenied = false,
   });
 
   final int scannedCount;
   final int newlyAddedCount;
   final int failedCount;
   final String? errorMessage;
+  final bool permissionPermanentlyDenied;
 
   bool get isSuccess => errorMessage == null;
 }

@@ -114,15 +114,87 @@ class AppDatabase extends _$AppDatabase {
     return (select(tracks)
           ..where(
             (t) =>
-                t.title.like(term) |
-                t.artist.like(term) |
-                t.album.like(term) |
-                t.genre.like(term),
+                t.isAvailable.equals(true) &
+                (t.title.like(term) |
+                    t.artist.like(term) |
+                    t.album.like(term) |
+                    t.genre.like(term) |
+                    t.fileExtension.like(term)),
           )
           ..orderBy([
             (t) => OrderingTerm(expression: t.title.collate(Collate.noCase)),
           ]))
         .get();
+  }
+
+  /// Reconciles scanned tracks for [platformSource] non-destructively:
+  /// - Inserts brand-new tracks.
+  /// - Updates metadata on existing tracks while preserving `isFavorite`,
+  ///   original `dateAdded`, and existing `artworkPath` when scan lacks art.
+  /// - Marks previously indexed tracks missing from this scan as `isAvailable = false`.
+  Future<({int newlyAddedCount, int updatedCount, int markedUnavailableCount})>
+  reconcilePlatformTracks({
+    required String platformSource,
+    required List<TracksCompanion> scannedEntries,
+    bool markMissingUnavailable = true,
+  }) async {
+    var newlyAddedCount = 0;
+    var updatedCount = 0;
+    var markedUnavailableCount = 0;
+
+    await transaction(() async {
+      final existingRows = await (select(
+        tracks,
+      )..where((t) => t.platformSource.equals(platformSource))).get();
+      final existingById = {for (final row in existingRows) row.id: row};
+      final scannedIds = <String>{};
+
+      for (final entry in scannedEntries) {
+        final id = entry.id.value;
+        scannedIds.add(id);
+        final existing = existingById[id];
+
+        if (existing == null) {
+          await into(tracks).insertOnConflictUpdate(entry);
+          newlyAddedCount++;
+        } else {
+          final preservedArt =
+              (entry.artworkPath.present && entry.artworkPath.value != null)
+              ? entry.artworkPath
+              : Value(existing.artworkPath);
+
+          await (update(tracks)..where((t) => t.id.equals(id))).write(
+            entry.copyWith(
+              dateAdded: Value(existing.dateAdded),
+              isFavorite: Value(existing.isFavorite),
+              artworkPath: preservedArt,
+              isAvailable: const Value(true),
+            ),
+          );
+          updatedCount++;
+        }
+      }
+
+      if (markMissingUnavailable) {
+        final missingIds = existingRows
+            .where((row) => row.isAvailable && !scannedIds.contains(row.id))
+            .map((row) => row.id)
+            .toList();
+
+        if (missingIds.isNotEmpty) {
+          markedUnavailableCount =
+              await (update(tracks)..where((t) => t.id.isIn(missingIds))).write(
+                const TracksCompanion(isAvailable: Value(false)),
+              );
+        }
+      }
+    });
+
+    return (
+      newlyAddedCount: newlyAddedCount,
+      updatedCount: updatedCount,
+      markedUnavailableCount: markedUnavailableCount,
+    );
   }
 
   Stream<List<Track>> watchFavoriteTracks() {

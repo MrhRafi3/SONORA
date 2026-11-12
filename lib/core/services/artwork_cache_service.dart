@@ -44,13 +44,23 @@ class ArtworkCacheService {
   /// Caches image bytes to disk using a hash of the [cacheKey] (e.g. album name or track ID).
   ///
   /// Returns the absolute path of the cached image file, or null if [bytes] is empty.
+  /// Set [prune] to false during batch scans and call [pruneDiskCache] once at the end.
   Future<String?> saveArtworkBytes(
     String cacheKey,
     Uint8List? bytes, {
     String extension = 'jpg',
     int maxDiskBytes = defaultMaxDiskBytes,
+    bool prune = true,
   }) async {
     if (bytes == null || bytes.isEmpty) return null;
+
+    if (_memoryPathCache.containsKey(cacheKey)) {
+      final cachedPath = _memoryPathCache[cacheKey]!;
+      if (File(cachedPath).existsSync()) {
+        return cachedPath;
+      }
+      _memoryPathCache.remove(cacheKey);
+    }
 
     final dir = await _artworkDir;
     final hash = hashKey(cacheKey);
@@ -64,8 +74,9 @@ class ArtworkCacheService {
     await file.writeAsBytes(bytes, flush: true);
     _recordInMemoryCache(cacheKey, file.path);
 
-    // Asynchronously prune cache if it exceeds max size threshold
-    await pruneDiskCache(maxBytes: maxDiskBytes);
+    if (prune) {
+      await pruneDiskCache(maxBytes: maxDiskBytes);
+    }
 
     return file.path;
   }

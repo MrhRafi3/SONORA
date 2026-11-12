@@ -6,6 +6,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../shared/widgets/empty_state_view.dart';
 import '../../../shared/widgets/search_bar_field.dart';
 import '../../../shared/widgets/section_header.dart';
+import '../../../shared/widgets/track_options_sheet.dart';
 import '../../../shared/widgets/track_tile.dart';
 import '../../library/presentation/library_providers.dart';
 import '../../player/domain/ui_track.dart';
@@ -20,12 +21,7 @@ class SearchScreen extends ConsumerStatefulWidget {
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> _recentSearches = [
-    'Debussy',
-    'Direct DSD Master',
-    'Acoustic Guitar',
-    'FLAC 24-bit',
-  ];
+  List<String> _recentSearches = [];
 
   @override
   void dispose() {
@@ -37,8 +33,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(searchQueryProvider.notifier).setQuery(value.trim());
   }
 
+  void _recordRecentSearch(String raw) {
+    final term = raw.trim();
+    if (term.isEmpty) return;
+    setState(() {
+      _recentSearches = [
+        term,
+        ..._recentSearches.where((e) => e.toLowerCase() != term.toLowerCase()),
+      ].take(8).toList();
+    });
+  }
+
   void _applyRecentSearch(String term) {
     _searchController.text = term;
+    _recordRecentSearch(term);
     ref.read(searchQueryProvider.notifier).setQuery(term.trim());
   }
 
@@ -52,6 +60,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final playerState = ref.watch(playerProvider);
     final activeQuery = ref.watch(searchQueryProvider);
     final isShowcaseActive = ref.watch(libraryEmptyStateProvider);
+    final hasRealMusic =
+        (ref.watch(tracksStreamProvider).asData?.value ?? []).isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Search')),
@@ -114,9 +124,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ],
 
                         // Audiophile Categories / Formats
-                        const SectionHeader(
-                          title: 'Explore High-Resolution Formats',
-                          subtitle: 'Quick filters for audiophile indexing',
+                        SectionHeader(
+                          title: hasRealMusic
+                              ? 'Filter By Audio Format'
+                              : 'Explore High-Resolution Formats',
+                          subtitle: hasRealMusic
+                              ? 'Quick searches across your indexed library'
+                              : 'Quick filters for audiophile indexing',
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(
@@ -130,36 +144,69 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             mainAxisSpacing: AppSpacing.sm,
                             crossAxisSpacing: AppSpacing.sm,
                             childAspectRatio: 2.4,
-                            children: [
-                              _CategoryCard(
-                                title: 'Lossless FLAC',
-                                subtitle: '24-bit / 96–192 kHz',
-                                icon: Icons.graphic_eq_rounded,
-                                color: AppColors.darkAccent,
-                                onTap: () => _applyRecentSearch('FLAC'),
-                              ),
-                              _CategoryCard(
-                                title: 'Direct DSD',
-                                subtitle: 'Super Audio CD masters',
-                                icon: Icons.album_rounded,
-                                color: AppColors.darkAccentGold,
-                                onTap: () => _applyRecentSearch('DSD'),
-                              ),
-                              _CategoryCard(
-                                title: 'Chamber & Classical',
-                                subtitle: 'Dynamic range recordings',
-                                icon: Icons.music_note_rounded,
-                                color: const Color(0xFF5DADE2),
-                                onTap: () => _applyRecentSearch('Debussy'),
-                              ),
-                              _CategoryCard(
-                                title: 'Acoustic Guitar',
-                                subtitle: 'Ribbon microphone captures',
-                                icon: Icons.audiotrack_rounded,
-                                color: const Color(0xFF4EBA6F),
-                                onTap: () => _applyRecentSearch('Acoustic'),
-                              ),
-                            ],
+                            children: hasRealMusic
+                                ? [
+                                    _CategoryCard(
+                                      title: 'Lossless FLAC',
+                                      subtitle: 'Uncompressed & high-res',
+                                      icon: Icons.graphic_eq_rounded,
+                                      color: AppColors.darkAccent,
+                                      onTap: () => _applyRecentSearch('FLAC'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'MP3 Collection',
+                                      subtitle: 'Universal library tracks',
+                                      icon: Icons.audiotrack_rounded,
+                                      color: AppColors.darkAccentGold,
+                                      onTap: () => _applyRecentSearch('MP3'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'M4A / AAC',
+                                      subtitle: 'Apple & encoded masters',
+                                      icon: Icons.album_rounded,
+                                      color: const Color(0xFF5DADE2),
+                                      onTap: () => _applyRecentSearch('M4A'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'WAV / PCM',
+                                      subtitle: 'Studio uncompressed audio',
+                                      icon: Icons.music_note_rounded,
+                                      color: const Color(0xFF4EBA6F),
+                                      onTap: () => _applyRecentSearch('WAV'),
+                                    ),
+                                  ]
+                                : [
+                                    _CategoryCard(
+                                      title: 'Lossless FLAC',
+                                      subtitle: '24-bit / 96–192 kHz',
+                                      icon: Icons.graphic_eq_rounded,
+                                      color: AppColors.darkAccent,
+                                      onTap: () => _applyRecentSearch('FLAC'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'Direct DSD',
+                                      subtitle: 'Super Audio CD masters',
+                                      icon: Icons.album_rounded,
+                                      color: AppColors.darkAccentGold,
+                                      onTap: () => _applyRecentSearch('DSD'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'Chamber & Classical',
+                                      subtitle: 'Dynamic range recordings',
+                                      icon: Icons.music_note_rounded,
+                                      color: const Color(0xFF5DADE2),
+                                      onTap: () =>
+                                          _applyRecentSearch('Debussy'),
+                                    ),
+                                    _CategoryCard(
+                                      title: 'Acoustic Guitar',
+                                      subtitle: 'Ribbon microphone captures',
+                                      icon: Icons.audiotrack_rounded,
+                                      color: const Color(0xFF4EBA6F),
+                                      onTap: () =>
+                                          _applyRecentSearch('Acoustic'),
+                                    ),
+                                  ],
                           ),
                         ),
                       ],
@@ -229,6 +276,7 @@ class _SearchResultsView extends ConsumerWidget {
               onTap: () => ref
                   .read(playerProvider.notifier)
                   .playTrack(track, queue: uiTracks),
+              onMoreOptions: () => showTrackOptionsSheet(context, ref, track),
             );
           },
         );
