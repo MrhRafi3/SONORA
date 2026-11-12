@@ -48,5 +48,9 @@ abstract class MusicLibraryRepository {
 
   Future<ScanSummary> importIosAudioFiles();
 
+  /// Safely removes non-music entries (e.g. WhatsApp audio, ringtones) from
+  /// the SQLite library index without deleting physical files.
+  Future<int> purgeNonMusicEntries();
+
   Future<void> deleteTrack(String id);
 }

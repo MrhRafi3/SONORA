@@ -210,6 +210,23 @@ class AppDatabase extends _$AppDatabase {
     return (delete(tracks)..where((t) => t.id.equals(id))).go();
   }
 
+  /// Safely purges non-music tracks (such as WhatsApp voice notes, ringtones,
+  /// call recordings, etc.) from the SQLite library index without deleting
+  /// any physical files from the device filesystem.
+  Future<int> purgeNonMusicTracks(
+    bool Function(Track track) isNonMusicPredicate,
+  ) async {
+    final allTracks = await select(tracks).get();
+    final nonMusicIds = allTracks
+        .where(isNonMusicPredicate)
+        .map((t) => t.id)
+        .toList();
+
+    if (nonMusicIds.isEmpty) return 0;
+
+    return await (delete(tracks)..where((t) => t.id.isIn(nonMusicIds))).go();
+  }
+
   Future<int> clearAllTracks() {
     return delete(tracks).go();
   }

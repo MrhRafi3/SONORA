@@ -23,6 +23,24 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   final List<int> _branchHistory = [0];
+  late final AppLifecycleListener _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onPause: () => ref.read(playerProvider.notifier).saveCurrentSession(),
+      onInactive: () => ref.read(playerProvider.notifier).saveCurrentSession(),
+      onDetach: () => ref.read(playerProvider.notifier).saveCurrentSession(),
+      onHide: () => ref.read(playerProvider.notifier).saveCurrentSession(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
 
   void _onDestinationSelected(int index) {
     if (index != widget.navigationShell.currentIndex) {

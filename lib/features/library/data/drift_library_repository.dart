@@ -5,18 +5,22 @@ import '../domain/entities.dart';
 import '../domain/library_repository.dart';
 import 'android_media_scanner.dart';
 import 'ios_file_importer.dart';
+import 'music_file_filter.dart';
 
 /// Production implementation of [MusicLibraryRepository] backed by Drift SQLite database.
 class DriftLibraryRepository implements MusicLibraryRepository {
   DriftLibraryRepository({
     required this.database,
-    this.androidScanner = const AndroidMediaScanner(),
+    AndroidMediaScanner? androidScanner,
     this.iosImporter = const IosFileImporter(),
-  });
+    MusicFileFilter? fileFilter,
+  }) : fileFilter = fileFilter ?? MusicFileFilter(),
+       androidScanner = androidScanner ?? AndroidMediaScanner();
 
   final AppDatabase database;
   final AndroidMediaScanner androidScanner;
   final IosFileImporter iosImporter;
+  final MusicFileFilter fileFilter;
 
   @override
   Stream<List<AudioTrack>> watchTracks({
@@ -203,6 +207,9 @@ class DriftLibraryRepository implements MusicLibraryRepository {
     }
 
     try {
+      // Safely purge pre-existing non-music entries from SQLite index without deleting files
+      await purgeNonMusicEntries();
+
       final scanItems = await androidScanner.scanMediaStore();
       final companions = scanItems.map(_mapScanItemToCompanion).toList();
       final stats = await database.reconcilePlatformTracks(
@@ -234,9 +241,38 @@ class DriftLibraryRepository implements MusicLibraryRepository {
   }
 
   @override
+  Future<int> purgeNonMusicEntries() async {
+    return await database.purgeNonMusicTracks((track) {
+      return fileFilter.isExcludedPath(
+        track.filePath,
+        displayName: track.title,
+        durationMs: track.durationMs,
+      );
+    });
+  }
+
+  @override
   Future<ScanSummary> importIosAudioFiles() async {
     try {
-      final importedItems = await iosImporter.pickAndImportAudioFiles();
+      final rawImportedItems = await iosImporter.pickAndImportAudioFiles();
+      if (rawImportedItems.isEmpty) {
+        return const ScanSummary(
+          scannedCount: 0,
+          newlyAddedCount: 0,
+          failedCount: 0,
+        );
+      }
+
+      final importedItems = rawImportedItems
+          .where(
+            (item) => fileFilter.isMusicFile(
+              item.filePath,
+              displayName: item.title,
+              durationMs: item.duration.inMilliseconds,
+            ),
+          )
+          .toList();
+
       if (importedItems.isEmpty) {
         return const ScanSummary(
           scannedCount: 0,

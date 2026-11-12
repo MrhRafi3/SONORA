@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/app_preferences_service.dart';
 import '../../library/presentation/library_providers.dart';
 import '../data/fake_audio_player_facade.dart';
 import '../data/just_audio_player_facade.dart';
@@ -211,11 +212,26 @@ class PlayerState {
 
 /// Production-ready PlayerNotifier governing real audio playback and queue state.
 class PlayerNotifier extends Notifier<PlayerState> {
+  static const AppPreferencesService _prefsService = AppPreferencesService();
+
   AudioPlayerFacade get _facade => ref.read(audioPlayerFacadeProvider);
   SonoraAudioHandler? get _handler => ref.read(audioHandlerProvider);
 
   int _loadRequestId = 0;
   String? _loadedTrackId;
+
+  /// Persists current track, position, and queue to preferences.
+  Future<void> saveCurrentSession() async {
+    final track = state.track;
+    if (track == null) return;
+    final queueIds = state.queue.map((t) => t.id).toList();
+    await _prefsService.savePlaybackSession(
+      trackId: track.id,
+      positionMs: state.position.inMilliseconds,
+      queueIds: queueIds,
+      queueIndex: state.queueIndex,
+    );
+  }
 
   @override
   PlayerState build() {
@@ -307,7 +323,8 @@ class PlayerNotifier extends Notifier<PlayerState> {
   }
 
   /// Replaces the unplayed initial showcase placeholder or unset state with real indexed library
-  /// tracks so daily-use playback never lingers on sample tracks.
+  /// tracks, restoring last saved playback position and track if available, while strictly
+  /// preserving paused state without unexpected autoplay.
   void syncRealLibrary(List<UiTrack> realTracks) {
     if (realTracks.isEmpty) return;
     final current = state.track;
@@ -321,19 +338,89 @@ class PlayerNotifier extends Notifier<PlayerState> {
       return;
     }
 
-    final first = realTracks.first;
+    final saved = _prefsService.getCachedPlaybackSession();
+    UiTrack? targetTrack;
+    List<UiTrack> targetQueue = realTracks;
+    int targetIndex = 0;
+    Duration targetPosition = Duration.zero;
+
+    if (saved.trackId != null) {
+      final matching = realTracks.where((t) => t.id == saved.trackId);
+      if (matching.isNotEmpty) {
+        final candidate = matching.first;
+        final isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
+        final fileExists =
+            isFlutterTest ||
+            candidate.filePath == null ||
+            File(candidate.filePath!).existsSync();
+
+        if (fileExists) {
+          targetTrack = candidate;
+          if (saved.queueIds.isNotEmpty) {
+            final trackMap = {for (final t in realTracks) t.id: t};
+            final reconstructed = saved.queueIds
+                .map((id) => trackMap[id])
+                .whereType<UiTrack>()
+                .toList();
+            if (reconstructed.isNotEmpty) {
+              targetQueue = reconstructed;
+            }
+          }
+          final foundIdx = targetQueue.indexWhere((t) => t.id == candidate.id);
+          targetIndex = foundIdx != -1 ? foundIdx : 0;
+          final maxMs = candidate.duration.inMilliseconds;
+          final safeMs = maxMs > 0
+              ? saved.positionMs.clamp(0, maxMs)
+              : saved.positionMs;
+          targetPosition = Duration(milliseconds: safeMs);
+        }
+      }
+    }
+
+    targetTrack ??= realTracks.first;
+
     state = state.copyWith(
-      track: first,
-      queue: List.unmodifiable(realTracks),
-      originalQueue: List.unmodifiable(realTracks),
-      queueIndex: 0,
-      position: Duration.zero,
-      duration: first.duration,
+      track: targetTrack,
+      queue: List.unmodifiable(targetQueue),
+      originalQueue: List.unmodifiable(targetQueue),
+      queueIndex: targetIndex,
+      position: targetPosition,
+      duration: targetTrack.duration,
+      isPlaying: false,
+      isLoading: false,
       clearError: true,
     );
-    _handler?.updateActiveTrack(first);
+
+    _handler?.updateActiveTrack(targetTrack);
     _handler?.updateActiveQueue(state.queue);
-    _handler?.updateQueueIndex(0);
+    _handler?.updateQueueIndex(targetIndex);
+    if (targetPosition > Duration.zero) {
+      _handler?.seek(targetPosition);
+    }
+
+    // In production, preload audio source at the restored position in paused state
+    if (saved.trackId != null || targetPosition > Duration.zero) {
+      final isFlutterTest = Platform.environment.containsKey('FLUTTER_TEST');
+      if (!isFlutterTest) {
+        try {
+          final source = targetTrack.sourceUri ?? targetTrack.filePath;
+          if (source != null && source.isNotEmpty) {
+            final isUri =
+                targetTrack.sourceUri != null &&
+                targetTrack.sourceUri!.isNotEmpty;
+            _facade
+                .load(source, isUri: isUri)
+                .then((_) {
+                  if (targetPosition > Duration.zero) {
+                    _facade.seek(targetPosition);
+                  }
+                  _loadedTrackId = targetTrack!.id;
+                })
+                .catchError((_) {});
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   void clearPlaybackError() {
@@ -398,7 +485,11 @@ class PlayerNotifier extends Notifier<PlayerState> {
     await _loadAndPlay(track, requestId);
   }
 
-  Future<void> _loadAndPlay(UiTrack track, int requestId) async {
+  Future<void> _loadAndPlay(
+    UiTrack track,
+    int requestId, {
+    Duration? initialSeek,
+  }) async {
     try {
       if (requestId != _loadRequestId) return;
 
@@ -436,6 +527,10 @@ class PlayerNotifier extends Notifier<PlayerState> {
       if (requestId != _loadRequestId) return;
       _loadedTrackId = track.id;
 
+      if (initialSeek != null && initialSeek > Duration.zero) {
+        await _facade.seek(initialSeek);
+      }
+
       await _facade.play();
       if (requestId != _loadRequestId) return;
 
@@ -444,6 +539,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
         isLoading: false,
         clearError: true,
       );
+      await saveCurrentSession();
     } catch (e) {
       if (requestId != _loadRequestId) return;
       state = state.copyWith(
@@ -577,6 +673,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       clearError: true,
     );
     _handler?.updateActiveQueue(const []);
+    await _prefsService.clearPlaybackSession();
   }
 
   /// Toggles between playing and paused states.
@@ -591,14 +688,20 @@ class PlayerNotifier extends Notifier<PlayerState> {
     if (state.isPlaying) {
       await _facade.pause();
       state = state.copyWith(isPlaying: false);
+      await saveCurrentSession();
     } else {
       if (_loadedTrackId != state.track!.id) {
         final requestId = ++_loadRequestId;
+        final resumePosition = state.position;
         state = state.copyWith(isLoading: true, clearError: true);
         _handler?.updateActiveTrack(state.track!);
         _handler?.updateActiveQueue(state.queue);
         _handler?.updateQueueIndex(state.queueIndex);
-        await _loadAndPlay(state.track!, requestId);
+        await _loadAndPlay(
+          state.track!,
+          requestId,
+          initialSeek: resumePosition,
+        );
         return;
       }
 
@@ -609,6 +712,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       }
       await _facade.play();
       state = state.copyWith(isPlaying: true);
+      await saveCurrentSession();
     }
   }
 
@@ -620,12 +724,14 @@ class PlayerNotifier extends Notifier<PlayerState> {
     final newPosition = Duration(milliseconds: targetMs);
     state = state.copyWith(position: newPosition);
     await _facade.seek(newPosition);
+    await saveCurrentSession();
   }
 
   /// Seeks to a specific [target] duration.
   Future<void> seekTo(Duration target) async {
     state = state.copyWith(position: target);
     await _facade.seek(target);
+    await saveCurrentSession();
   }
 
   /// Toggles the favorite status of the active track and updates the SQLite repository.
@@ -813,6 +919,7 @@ class PlayerNotifier extends Notifier<PlayerState> {
       clearError: true,
     );
     _handler?.updateActiveQueue(const []);
+    await _prefsService.clearPlaybackSession();
   }
 }
 

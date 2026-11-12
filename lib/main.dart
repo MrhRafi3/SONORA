@@ -4,12 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
+import 'core/services/app_preferences_service.dart';
 import 'features/player/data/sonora_audio_handler.dart';
 import 'features/player/presentation/player_state.dart';
 
 void main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Warm preferences cache from disk for instantaneous state restoration
+  await const AppPreferencesService().init();
 
   // Configure edge-to-edge transparent system navigation and status bar
   SystemChrome.setSystemUIOverlayStyle(
@@ -33,6 +37,7 @@ void main() async {
         androidNotificationIcon: 'drawable/ic_stat_sonora',
         androidShowNotificationBadge: true,
         androidStopForegroundOnPause: true,
+        preloadArtwork: true,
         notificationColor: Color(0xFFE59866),
       ),
     );

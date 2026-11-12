@@ -174,7 +174,11 @@ class SonoraAudioHandler extends BaseAudioHandler
   MediaItem trackToMediaItem(UiTrack track) {
     Uri? artUri;
     if (track.artworkPath != null && track.artworkPath!.isNotEmpty) {
-      artUri = Uri.file(track.artworkPath!);
+      final file = File(track.artworkPath!);
+      if (Platform.environment.containsKey('FLUTTER_TEST') ||
+          file.existsSync()) {
+        artUri = Uri.file(track.artworkPath!);
+      }
     }
 
     return MediaItem(
@@ -197,6 +201,7 @@ class SonoraAudioHandler extends BaseAudioHandler
   /// Synchronizes active track metadata with lock screen and notification shade.
   void updateActiveTrack(UiTrack track) {
     mediaItem.add(trackToMediaItem(track));
+    _broadcastState();
   }
 
   /// Synchronizes current active playlist queue with system media browser.
@@ -204,8 +209,8 @@ class SonoraAudioHandler extends BaseAudioHandler
     queue.add(tracks.map(trackToMediaItem).toList());
     if (tracks.isEmpty) {
       _queueIndex = null;
-      _broadcastState();
     }
+    _broadcastState();
   }
 
   /// Updates the active queue index broadcast in [PlaybackState].
@@ -239,6 +244,7 @@ class SonoraAudioHandler extends BaseAudioHandler
           : source;
       await _player.setAudioSource(ja.AudioSource.file(cleanPath));
     }
+    _broadcastState();
   }
 
   /// Broadcasts the current player state to system notification and lock screen.
@@ -249,8 +255,8 @@ class SonoraAudioHandler extends BaseAudioHandler
     final controls = [
       MediaControl.skipToPrevious,
       if (isPlaying) MediaControl.pause else MediaControl.play,
-      MediaControl.stop,
       MediaControl.skipToNext,
+      MediaControl.stop,
     ];
 
     final currentQueueLength = queue.value.length;
@@ -268,12 +274,16 @@ class SonoraAudioHandler extends BaseAudioHandler
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
+          MediaAction.play,
+          MediaAction.pause,
+          MediaAction.playPause,
+          MediaAction.stop,
           MediaAction.skipToNext,
           MediaAction.skipToPrevious,
           MediaAction.setRepeatMode,
           MediaAction.setShuffleMode,
         },
-        androidCompactActionIndices: const [0, 1, 3],
+        androidCompactActionIndices: const [0, 1, 2],
         processingState:
             const {
               ja.ProcessingState.idle: AudioProcessingState.idle,
@@ -318,7 +328,10 @@ class SonoraAudioHandler extends BaseAudioHandler
   }
 
   @override
-  Future<void> seek(Duration position) => _player.seek(position);
+  Future<void> seek(Duration position) async {
+    await _player.seek(position);
+    _broadcastState();
+  }
 
   @override
   Future<void> skipToNext() async {

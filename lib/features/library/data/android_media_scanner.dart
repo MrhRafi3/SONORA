@@ -5,18 +5,21 @@ import 'package:path/path.dart' as p;
 import 'package:permission_handler/permission_handler.dart';
 import '../../../core/services/artwork_cache_service.dart';
 import '../../../core/services/audio_metadata_service.dart';
+import 'music_file_filter.dart';
 
 /// Service responsible for scanning the Android MediaStore audio index.
 class AndroidMediaScanner {
-  const AndroidMediaScanner({
+  AndroidMediaScanner({
     this.metadataService = const AudioMetadataService(),
     this.artworkCacheService = const ArtworkCacheService(),
     this.channel = const MethodChannel('com.mrhrafi3.sonora/mediastore'),
-  });
+    MusicFileFilter? fileFilter,
+  }) : fileFilter = fileFilter ?? MusicFileFilter();
 
   final AudioMetadataService metadataService;
   final ArtworkCacheService artworkCacheService;
   final MethodChannel channel;
+  final MusicFileFilter fileFilter;
 
   static bool _notificationPromptedThisSession = false;
 
@@ -128,21 +131,32 @@ class AndroidMediaScanner {
     if (rawList == null || rawList.isEmpty) return [];
 
     // Filter candidate MediaStore entries before spawning isolate parsing.
-    final candidates = <_RawMediaStoreEntry>[];
+    final rawCandidates = <_RawMediaStoreEntry>[];
     for (final raw in rawList) {
       if (raw is! Map) continue;
       final map = Map<String, dynamic>.from(raw);
       final filePath = map['filePath']?.toString() ?? '';
       final displayName = map['displayName']?.toString() ?? '';
       final mimeType = map['mimeType']?.toString() ?? '';
+      final durationMs = (map['duration'] as num?)?.toInt() ?? 0;
       final ext = _resolveExtension(filePath, displayName, mimeType);
       final isSupported =
           metadataService.isSupportedAudioFile(filePath) ||
-          ['mp3', 'flac', 'wav', 'm4a', 'aac', 'ogg', 'opus'].contains(ext);
+          MusicFileFilter.supportedExtensions.contains(ext);
 
       if (!isSupported && ext.isNotEmpty) continue;
 
-      candidates.add(
+      // Filter out WhatsApp voice notes, Telegram audio, call recordings,
+      // ringtones, alarms, notifications, hidden folders, and .nomedia files.
+      if (fileFilter.isExcludedPath(
+        filePath,
+        displayName: displayName,
+        durationMs: durationMs,
+      )) {
+        continue;
+      }
+
+      rawCandidates.add(
         _RawMediaStoreEntry(
           id: map['id']?.toString() ?? '',
           contentUri: map['contentUri']?.toString() ?? '',
@@ -151,13 +165,52 @@ class AndroidMediaScanner {
           titleFromStore: map['title']?.toString() ?? '',
           artistFromStore: map['artist']?.toString(),
           albumFromStore: map['album']?.toString(),
-          durationMs: (map['duration'] as num?)?.toInt() ?? 0,
+          durationMs: durationMs,
           fileSizeBytes: (map['size'] as num?)?.toInt() ?? 0,
           year: (map['year'] as num?)?.toInt(),
           trackNumber: (map['trackNumber'] as num?)?.toInt(),
           ext: ext,
         ),
       );
+    }
+
+    if (rawCandidates.isEmpty) return [];
+
+    // Prioritize standard Music directories (/Music/) over /Download/ and generic dirs
+    rawCandidates.sort((a, b) {
+      final scoreA = fileFilter.getPriorityScore(a.filePath);
+      final scoreB = fileFilter.getPriorityScore(b.filePath);
+      return scoreB.compareTo(scoreA);
+    });
+
+    // Deduplicate candidate tracks by canonical file path, contentUri, and normalized metadata
+    final candidates = <_RawMediaStoreEntry>[];
+    final seenPaths = <String>{};
+    final seenContentUris = <String>{};
+    final seenMetadataKeys = <String>{};
+
+    for (final entry in rawCandidates) {
+      final canonicalPath = entry.filePath.replaceAll('\\', '/').toLowerCase();
+      if (canonicalPath.isNotEmpty && !seenPaths.add(canonicalPath)) {
+        continue;
+      }
+      if (entry.contentUri.isNotEmpty &&
+          !seenContentUris.add(entry.contentUri)) {
+        continue;
+      }
+
+      // Avoid duplicate tracks with identical metadata and duration (within 1s)
+      final title = entry.titleFromStore.trim().toLowerCase();
+      final artist = (entry.artistFromStore ?? '').trim().toLowerCase();
+      if (title.isNotEmpty && artist.isNotEmpty && artist != '<unknown>') {
+        final durationBucket = (entry.durationMs / 1000).round();
+        final metaKey = '$title::$artist::$durationBucket';
+        if (!seenMetadataKeys.add(metaKey)) {
+          continue;
+        }
+      }
+
+      candidates.add(entry);
     }
 
     if (candidates.isEmpty) return [];

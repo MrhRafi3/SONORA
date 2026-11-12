@@ -71,10 +71,14 @@ class MainActivity : AudioServiceActivity() {
             MediaStore.Audio.Media.ALBUM_ID
         )
 
-        // Select music tracks >= 5s (to skip UI/ringtones), while still allowing raw .aac streams
-        // whose duration MediaStore may report as 0.
+        // Select music tracks >= 5s (to skip UI/ringtones), excluding ringtones,
+        // notifications, and alarms, while allowing raw .aac streams whose duration
+        // MediaStore may report as 0.
         val selection =
-            "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND (" +
+            "${MediaStore.Audio.Media.IS_MUSIC} != 0 AND " +
+                "${MediaStore.Audio.Media.IS_RINGTONE} == 0 AND " +
+                "${MediaStore.Audio.Media.IS_NOTIFICATION} == 0 AND " +
+                "${MediaStore.Audio.Media.IS_ALARM} == 0 AND (" +
                 "${MediaStore.Audio.Media.DURATION} >= 5000 OR " +
                 "${MediaStore.Audio.Media.DISPLAY_NAME} LIKE '%.aac' OR " +
                 "${MediaStore.Audio.Media.DATA} LIKE '%.aac')"
@@ -96,9 +100,12 @@ class MainActivity : AudioServiceActivity() {
             val albumIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
 
             while (cursor.moveToNext()) {
+                val data = cursor.getString(dataCol) ?: ""
+                if (isNonMusicPath(data)) {
+                    continue
+                }
                 val id = cursor.getLong(idCol)
                 val contentUri = ContentUris.withAppendedId(collection, id).toString()
-                val data = cursor.getString(dataCol) ?: ""
                 val displayName = if (displayNameCol >= 0) cursor.getString(displayNameCol) ?: "" else ""
                 val title = cursor.getString(titleCol) ?: ""
                 val artist = cursor.getString(artistCol)
@@ -132,5 +139,28 @@ class MainActivity : AudioServiceActivity() {
         }
 
         return trackList
+    }
+
+    private fun isNonMusicPath(path: String): Boolean {
+        if (path.isEmpty()) return false
+        val lower = path.lowercase().replace('\\', '/')
+        return lower.contains("whatsapp") ||
+                lower.contains("telegram") ||
+                lower.contains("callrecordings") ||
+                lower.contains("call recordings") ||
+                lower.contains("call_recordings") ||
+                lower.contains("voice recorder") ||
+                lower.contains("voicerecorder") ||
+                lower.contains("soundrecorder") ||
+                lower.contains("voice notes") ||
+                lower.contains("voicenotes") ||
+                lower.contains("/calls/") ||
+                lower.contains("/recordings/call") ||
+                lower.contains("/ringtones/") ||
+                lower.contains("/notifications/") ||
+                lower.contains("/alarms/") ||
+                lower.contains("/ui/") ||
+                lower.contains("/.nomedia") ||
+                lower.contains("/.")
     }
 }
